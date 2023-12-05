@@ -26,6 +26,14 @@ Transmitter::Transmitter(const mavlink::ConfigurationSettings& setttings)
 
 bool Transmitter::start()
 {
+	// Setup bluetooth interface
+	static struct config_data config = {
+		.use_bt4 = true,
+		.use_bt5 = true
+	};
+
+	init_bluetooth(&config);
+
 	_mavlink = std::make_shared<mavlink::Mavlink>(_settings);
 
 	// Provide PARAM_REQUEST_LIST and PARAM_SET callbacks for our application

@@ -42,13 +42,24 @@ add_definitions(-DAPP_GIT_VERSION="${GIT_VERSION}")
 
 message("-- Version: ${BoldGreen}${GIT_VERSION}${White}")
 
-include_directories(src/misc)
-include_directories(src/Transmitter)
-include_directories(src/Transmitter/parameters)
+include_directories(
+    src/
+    src/misc
+    src/Transmitter
+    src/Transmitter/parameters
+    libraries/opendroneid-core-c/libopendroneid
+    libraries/bluez
+)
 
 # Create executable
 add_executable(rid-transmitter
     src/main.cpp
+    libraries/opendroneid-core-c/libopendroneid/opendroneid.c
+    libraries/bluez/lib/hci.c
+    libraries/bluez/lib/bluetooth.c
+    src/bluetooth.c
+    src/print_bt_features.c
+    src/utils.c
     src/Transmitter/states/State1.cpp
     src/Transmitter/states/State2.cpp
     src/Transmitter/states/State3.cpp

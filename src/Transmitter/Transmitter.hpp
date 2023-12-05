@@ -11,6 +11,11 @@
 #include <unordered_map>
 #include <thread>
 
+// From opendroneid-core-c
+extern "C" {
+#include <bluetooth.h>
+}
+
 namespace txr
 {
 

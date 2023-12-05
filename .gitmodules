@@ -4,3 +4,9 @@
 [submodule "libraries/mavlink-cpp"]
 	path = libraries/mavlink-cpp
 	url = git@github.com:dakejahl/mavlink-cpp.git
+[submodule "libraries/bluez"]
+	path = libraries/bluez
+	url = git@github.com:bluez/bluez.git
+[submodule "libraries/opendroneid-core-c"]
+	path = libraries/opendroneid-core-c
+	url = git@github.com:opendroneid/opendroneid-core-c.git
