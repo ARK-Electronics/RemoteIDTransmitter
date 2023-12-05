@@ -15,9 +15,7 @@
 #include "utils.h"
 
 void init_bluetooth(struct config_data *config);
-void send_bluetooth_message(const union ODID_Message_encoded *encoded, uint8_t msg_counter, struct config_data *config);
 void send_bluetooth_message_extended_api(const union ODID_Message_encoded *encoded, uint8_t msg_counter, struct config_data *config);
-void send_bluetooth_message_pack(const struct ODID_MessagePack_encoded *pack_enc, uint8_t msg_counter, struct config_data *config);
 void close_bluetooth(struct config_data *config);
 
 #endif //_BLUETOOTH_H_

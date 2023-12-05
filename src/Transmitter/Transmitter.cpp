@@ -29,7 +29,9 @@ bool Transmitter::start()
 	// Setup bluetooth interface
 	static struct config_data config = {
 		.use_bt4 = true,
-		.use_bt5 = true
+		.use_bt5 = true,
+		.handle_bt4 = 0, // The Extended Advertising set number used for BT4
+		.handle_bt5 = 1, // The Extended Advertising set number used for BT5
 	};
 
 	init_bluetooth(&config);
