@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Bluetooth.hpp>
 #include <Mavlink.hpp>
 
 #include <parameters.hpp>
@@ -11,11 +12,6 @@
 #include <unordered_map>
 #include <thread>
 
-// From opendroneid-core-c
-extern "C" {
-#include <bluetooth.h>
-}
-
 namespace txr
 {
 
@@ -25,10 +21,15 @@ static char VERSION_FILE_NAME[] = "/data/version.txt";
 static char VERSION_FILE_NAME[] = "/tmp/rid-transmitter/version.txt";
 #endif
 
+struct Settings {
+	mavlink::ConfigurationSettings mavlink_settings {};
+	bt::Settings bluetooth_settings {};
+};
+
 class Transmitter
 {
 public:
-	Transmitter(const mavlink::ConfigurationSettings& settings);
+	Transmitter(const txr::Settings& settings);
 
 	bool start();
 	void stop();
@@ -42,6 +43,7 @@ public:
 	uint64_t app_start_time() { return _app_start_time; };
 
 	std::shared_ptr<mavlink::Mavlink> mavlink() { return _mavlink; };
+	std::shared_ptr<bt::Bluetooth> bluetooth() { return _bluetooth; };
 
 	// Setters
 	void set_next_state(states::AppState state);
@@ -51,13 +53,16 @@ private:
 	uint64_t _app_start_time {};
 	volatile std::atomic<bool> _should_exit {};
 
-	mavlink::ConfigurationSettings _settings {};
+	bt::Settings _bluetooth_settings {};
+	std::shared_ptr<bt::Bluetooth> _bluetooth {};
+
+	mavlink::ConfigurationSettings _mavlink_settings {};
+	std::shared_ptr<mavlink::Mavlink> _mavlink {};
 
 	// States
 	states::AppState _current_state {};
 	states::AppState _next_state {};
-
-	ThreadSafeQueue<states::AppState> 		_state_request_queue {10};
+	ThreadSafeQueue<states::AppState> _state_request_queue {10};
 
 	// State enum to object map
 	std::unordered_map<states::AppState, std::shared_ptr<states::State<Transmitter>>> _states_map = {
@@ -66,12 +71,10 @@ private:
 		std::make_pair(states::AppState::STATE_3, std::make_shared<states::State3>()),
 	};
 
-	const std::string get_sw_version();
 	void set_sw_version(const std::string& version);
+	const std::string get_sw_version();
 
 	std::string state_string(const states::AppState state);
-
-	std::shared_ptr<mavlink::Mavlink> _mavlink {};
 };
 
 } // end namespace txr

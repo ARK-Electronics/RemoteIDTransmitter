@@ -35,14 +35,26 @@ int main(int argc, const char** argv)
 		std::exit(1);
 	}
 
-
-	mavlink::ConfigurationSettings settings = {
+	mavlink::ConfigurationSettings mav_settings = {
 		.connection_url = parser.get<std::string>("--mavlink-url"),
 		.sysid = static_cast<uint8_t>(parser.get<int>("--sysid")),
 		.compid = static_cast<uint8_t>(parser.get<int>("--compid")), // should use MAV_COMP_ID_ODID_TXRX_1
 		.mav_type = MAV_TYPE_ODID,
 		.mav_autopilot = MAV_AUTOPILOT_INVALID,
-		.emit_heartbeat = true
+		.emit_heartbeat = true,
+	};
+
+	bt::Settings bt_settings = {
+		.hci_device_name = "hci0",
+		.use_bt4 = true,
+		.use_bt5 = true,
+		.bt4_set = 0,
+		.bt5_set = 1,
+	};
+
+	txr::Settings settings = {
+		.mavlink_settings = mav_settings,
+		.bluetooth_settings = bt_settings,
 	};
 
 	_transmitter = std::make_shared<txr::Transmitter>(settings);

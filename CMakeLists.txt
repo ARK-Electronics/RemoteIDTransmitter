@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(rid-transmitter VERSION 0.1 LANGUAGES CXX)
+project(rid-transmitter VERSION 0.1 LANGUAGES C CXX)
 
 string(ASCII 27 Esc)
 set(White       "${Esc}[m")
@@ -45,6 +45,7 @@ message("-- Version: ${BoldGreen}${GIT_VERSION}${White}")
 include_directories(
     src/
     src/misc
+    src/Bluetooth
     src/Transmitter
     src/Transmitter/parameters
     libraries/opendroneid-core-c/libopendroneid
@@ -53,18 +54,17 @@ include_directories(
 
 # Create executable
 add_executable(rid-transmitter
-    src/main.cpp
     libraries/opendroneid-core-c/libopendroneid/opendroneid.c
     libraries/bluez/lib/hci.c
     libraries/bluez/lib/bluetooth.c
-    src/bluetooth.c
-    src/print_bt_features.c
-    src/utils.c
+    src/Bluetooth/Bluetooth.cpp
+    src/Bluetooth/print_bt_features.c
+    src/Transmitter/Transmitter.cpp
     src/Transmitter/states/State1.cpp
     src/Transmitter/states/State2.cpp
     src/Transmitter/states/State3.cpp
-    src/Transmitter/Transmitter.cpp
     src/Transmitter/parameters/parameters.cpp
+    src/main.cpp
 )
 
 target_link_libraries(rid-transmitter

@@ -5,8 +5,9 @@
 namespace txr
 {
 
-Transmitter::Transmitter(const mavlink::ConfigurationSettings& setttings)
-	: _settings(setttings)
+Transmitter::Transmitter(const txr::Settings& settings)
+	: _mavlink_settings(settings.mavlink_settings)
+	, _bluetooth_settings(settings.bluetooth_settings)
 {
 	// If version has changed reset parameters to default
 	std::string version(APP_GIT_VERSION);
@@ -26,17 +27,12 @@ Transmitter::Transmitter(const mavlink::ConfigurationSettings& setttings)
 
 bool Transmitter::start()
 {
-	// Setup bluetooth interface
-	static struct config_data config = {
-		.use_bt4 = true,
-		.use_bt5 = true,
-		.handle_bt4 = 0, // The Extended Advertising set number used for BT4
-		.handle_bt5 = 1, // The Extended Advertising set number used for BT5
-	};
+	//// Setup Bluetooth
+	_bluetooth = std::make_shared<bt::Bluetooth>(_bluetooth_settings);
+	_bluetooth->initialize();
 
-	init_bluetooth(&config);
-
-	_mavlink = std::make_shared<mavlink::Mavlink>(_settings);
+	//// Setup MAVLink
+	_mavlink = std::make_shared<mavlink::Mavlink>(_mavlink_settings);
 
 	// Provide PARAM_REQUEST_LIST and PARAM_SET callbacks for our application
 	_mavlink->enable_parameters(
