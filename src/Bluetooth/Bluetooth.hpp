@@ -46,7 +46,6 @@ private:
 	void hci_le_set_advertising_set_random_address(uint8_t set);
 	void hci_le_set_extended_advertising_enable();
 
-
 private:
 	Settings _settings {};
 	int _dd = 0;

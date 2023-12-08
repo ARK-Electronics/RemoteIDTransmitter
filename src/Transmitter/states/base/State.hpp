@@ -39,12 +39,6 @@ public:
 	virtual bool can_transition_to(AppState state) override;
 
 private:
-	enum class SubAppState {
-		SUB_STATE_1,
-		SUB_STATE_2,
-		SUB_STATE_3,
-	};
-	SubAppState _sub_state {};
 };
 
 class State2 : public State<txr::Transmitter>

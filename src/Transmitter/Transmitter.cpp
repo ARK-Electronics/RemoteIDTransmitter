@@ -40,13 +40,17 @@ bool Transmitter::start()
 		std::bind(&Transmitter::mavlink_param_set_cb, this, std::placeholders::_1)
 	);
 
-	// Subscribe to mavlink OPEN_DRONE_ID_BASIC_ID
-	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID, [this](const mavlink_message_t& message) {
-		mavlink_open_drone_id_basic_id_t msg;
-		mavlink_msg_open_drone_id_basic_id_decode(&message, &msg);
-		LOG("OPEN_DRONE_ID_BASIC_ID");
-	});
+	// messages -- all should publish at >= 1_Hz (and not older than 1_s)
+	// OPEN_DRONE_ID_BASIC_ID -- UAS info
+	// OPEN_DRONE_ID_LOCATION -- UAS location
+	// OPEN_DRONE_ID_SYSTEM -- GCS location
 
+	// Subscribe to mavlink OPEN_DRONE_ID_LOCATION
+	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION, [this](const mavlink_message_t& message) {
+		mavlink_open_drone_id_location_t msg;
+		mavlink_msg_open_drone_id_location_decode(&message, &msg);
+		LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION");
+	});
 
 	auto result = _mavlink->start();
 
@@ -81,19 +85,9 @@ void Transmitter::run_state_machine()
 		// Application internal state change
 		bool application_new_state = _current_state != _next_state;
 
-		// Only process external state requests if there is no internal change pending
-		std::optional<states::AppState> requested_state = {std::nullopt};
-
-		if (!application_new_state) {
-			requested_state = _state_request_queue.pop_front();
-		}
-
-		// Always execute internal transitions before executing requested transitions (prevents race condition)
-		auto next_state = application_new_state ? _next_state : requested_state ? requested_state.value() : _current_state;
-
 		// NOTE: the 'set_next_state' and 'request_next_state' functions already check if the transition is possible
-		if (next_state != _current_state) {
-			handle_state_transition(next_state);
+		if (_current_state != _next_state) {
+			handle_state_transition(_next_state);
 		}
 
 		// Run current state
@@ -121,20 +115,6 @@ void Transmitter::set_next_state(states::AppState state)
 
 	LOG("Setting next transition: %s --> %s", state_string(_current_state).c_str(), state_string(state).c_str());
 	_next_state = state;
-}
-
-void Transmitter::request_next_state(states::AppState state)
-{
-	if (!_states_map[_current_state]->can_transition_to(state)) {
-		LOG(RED_TEXT "Cannot transition from: %s --> %s" NORMAL_TEXT, state_string(_current_state).c_str(), state_string(state).c_str());
-		return;
-	}
-
-	LOG("Requesting next transition: %s --> %s", state_string(_current_state).c_str(), state_string(state).c_str());
-
-	if (!_state_request_queue.push_back(state)) {
-		LOG(RED_TEXT "State request queue full! Someone is spamming..." NORMAL_TEXT);
-	}
 }
 
 std::string Transmitter::state_string(const states::AppState state)

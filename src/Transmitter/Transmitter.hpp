@@ -45,24 +45,23 @@ public:
 	std::shared_ptr<mavlink::Mavlink> mavlink() { return _mavlink; };
 	std::shared_ptr<bt::Bluetooth> bluetooth() { return _bluetooth; };
 
-	// Setters
 	void set_next_state(states::AppState state);
-	void request_next_state(states::AppState state); // MAVLink commands use requests
 
 private:
 	uint64_t _app_start_time {};
 	volatile std::atomic<bool> _should_exit {};
 
+	// Bluetooth interface
 	bt::Settings _bluetooth_settings {};
 	std::shared_ptr<bt::Bluetooth> _bluetooth {};
 
+	// Mavlink interface
 	mavlink::ConfigurationSettings _mavlink_settings {};
 	std::shared_ptr<mavlink::Mavlink> _mavlink {};
 
 	// States
 	states::AppState _current_state {};
 	states::AppState _next_state {};
-	ThreadSafeQueue<states::AppState> _state_request_queue {10};
 
 	// State enum to object map
 	std::unordered_map<states::AppState, std::shared_ptr<states::State<Transmitter>>> _states_map = {

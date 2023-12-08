@@ -1,5 +1,8 @@
 #include <states/base/State.hpp>
 
+#include <chrono>
+#include <thread>
+
 namespace states
 {
 
@@ -22,12 +25,8 @@ void State1::on_exit() {}
 
 void State1::run()
 {
-	switch (_sub_state) {
-	case SubAppState::SUB_STATE_1:
-	case SubAppState::SUB_STATE_2:
-	case SubAppState::SUB_STATE_3:
-		break;
-	}
+	LOG("State1: run()");
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
 } // end namespace states

@@ -34,12 +34,20 @@ void Bluetooth::initialize()
 		return;
 	}
 
-	hci_reset();
-	hci_stop_transmit();
+	this->hci_reset();
+	this->hci_stop_transmit();
 
-	hci_le_read_local_supported_features();
+	this->hci_le_read_local_supported_features();
 
-	// Reset bt4 and bt5
+	// BT4
+	this->hci_le_set_extended_advertising_parameters(_settings.bt4_set, 300, false);
+	this->hci_le_set_advertising_set_random_address(_settings.bt4_set);
+
+	// BT5
+	this->hci_le_set_extended_advertising_parameters(_settings.bt5_set, 300, true);
+	this->hci_le_set_advertising_set_random_address(_settings.bt5_set);
+
+	hci_le_set_extended_advertising_enable();
 }
 
 int Bluetooth::hci_open()
