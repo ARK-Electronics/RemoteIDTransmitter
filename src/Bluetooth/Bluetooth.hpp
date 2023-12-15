@@ -24,6 +24,10 @@ public:
 
 	void initialize();
 
+	void stop();
+
+	void hci_le_set_extended_advertising_data_pack(uint8_t set, const struct ODID_MessagePack_encoded* pack_enc, uint8_t msg_counter);
+
 private:
 
 	std::string generate_random_mac_address();
@@ -35,7 +39,7 @@ private:
 
 	void send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length);
 
-	void hci_le_set_extended_advertising_data(uint8_t set, const union ODID_Message_encoded* encoded, uint8_t msg_counter);
+	// void hci_le_set_extended_advertising_data(uint8_t set, const union ODID_Message_encoded* encoded, uint8_t msg_counter);
 
 	void hci_le_set_advertising_disable();
 	void hci_le_set_extended_advertising_disable();

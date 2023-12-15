@@ -59,7 +59,6 @@ bool Transmitter::start()
 		return false;
 	}
 
-	_app_start_time = millis();
 	_current_state = states::AppState::STATE_1;
 	_states_map[_current_state]->on_enter();
 
@@ -70,6 +69,8 @@ void Transmitter::stop()
 {
 	if (_mavlink.get()) _mavlink->stop();
 
+	if (_bluetooth.get()) _bluetooth->stop();
+
 	_should_exit.store(true);
 }
 
@@ -77,20 +78,15 @@ void Transmitter::run_state_machine()
 {
 	while (!_should_exit) {
 
-		// Update parameters
 		if (params::updated()) {
 			params::load();
 		}
-
-		// Application internal state change
-		bool application_new_state = _current_state != _next_state;
 
 		// NOTE: the 'set_next_state' and 'request_next_state' functions already check if the transition is possible
 		if (_current_state != _next_state) {
 			handle_state_transition(_next_state);
 		}
 
-		// Run current state
 		_states_map[_current_state]->run();
 	}
 }
@@ -99,7 +95,6 @@ void Transmitter::handle_state_transition(states::AppState next_state)
 {
 	_states_map[_current_state]->on_exit();
 
-	// Set current and next states equal
 	_current_state = next_state;
 	_next_state = _current_state;
 

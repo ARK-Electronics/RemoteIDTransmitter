@@ -47,7 +47,12 @@ void Bluetooth::initialize()
 	this->hci_le_set_extended_advertising_parameters(_settings.bt5_set, 300, true);
 	this->hci_le_set_advertising_set_random_address(_settings.bt5_set);
 
-	hci_le_set_extended_advertising_enable();
+	this->hci_le_set_extended_advertising_enable();
+}
+
+void Bluetooth::stop()
+{
+	// TODO:
 }
 
 int Bluetooth::hci_open()
@@ -87,29 +92,31 @@ void Bluetooth::hci_reset()
 	send_command(ogf, ocf, nullptr, 0);
 }
 
-// See hci_le_set_advertising_data for further details
-void Bluetooth::hci_le_set_extended_advertising_data(uint8_t set, const union ODID_Message_encoded* encoded, uint8_t msg_counter)
+void Bluetooth::hci_le_set_extended_advertising_data_pack(uint8_t set, const struct ODID_MessagePack_encoded* pack_enc, uint8_t msg_counter)
 {
 	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
 	uint16_t ocf = 0x37;      // Opcode Command Field: LE Set Extended Advertising Data
-	uint8_t buf[] = { 0x00,   // Advertising_Handle: Used to identify an advertising set
-			  0x03,   // Operation: 3 = Complete extended advertising data
-			  0x01,   // Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
-			  0x1F,   // Advertising_Data_Length: The number of octets in the Advertising Data parameter
-			  0x1E,   // The length of the following data field
-			  0x16,   // 16 = GAP AD Type = "Service Data - 16-bit UUID"
-			  0xFA, 0xFF, // 0xFFFA = ASTM International, ASTM Remote ID
-			  0x0D,   // 0x0D = AD Application Code within the ASTM address space = Open Drone ID
-			  0x00,   // xx = 8-bit message counter starting at 0x00 and wrapping around at 0xFF
-			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-			};  // 25-byte Drone ID message data
+	uint8_t buf[10 + 3 + ODID_PACK_MAX_MESSAGES * ODID_MESSAGE_SIZE] = {
+		0x00,   // Advertising_Handle: Used to identify an advertising set
+		0x03,   // Operation: 3 = Complete extended advertising data
+		0x01,   // Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
+		0x1F,   // Advertising_Data_Length: The number of octets in the Advertising Data parameter
+		0x1E,   // The length of the following data field
+		0x16,   // 16 = GAP AD Type = "Service Data - 16-bit UUID"
+		0xFA, 0xFF, // 0xFFFA = ASTM International, ASTM Remote ID
+		0x0D,   // 0x0D = AD Application Code within the ASTM address space = Open Drone ID
+		0x00,   // xx = 8-bit message counter starting at 0x00 and wrapping around at 0xFF
+		0x00
+	}; // 3 + ODID_PACK_MAX_MESSAGES*ODID_MESSAGE_SIZE byte Drone ID message pack data
 	buf[0] = set;
 	buf[9] = msg_counter;
 
-	for (int i = 0; i < ODID_MESSAGE_SIZE; i++) {
-		buf[10 + i] = encoded->rawData[i];
-	}
+	int amount = pack_enc->MsgPackSize;
+	buf[3] = 1 + 5 + 3 + amount * ODID_MESSAGE_SIZE;
+	buf[4] = 5 + 3 + amount * ODID_MESSAGE_SIZE;
+
+	for (int i = 0; i < 3 + amount * ODID_MESSAGE_SIZE; i++)
+		buf[10 + i] = ((char*) pack_enc)[i];
 
 	send_command(ogf, ocf, buf, sizeof(buf));
 }

@@ -40,15 +40,12 @@ public:
 	std::vector<mavlink::Parameter> mavlink_param_request_list_cb();
 	bool mavlink_param_set_cb(mavlink::Parameter* param);
 
-	uint64_t app_start_time() { return _app_start_time; };
-
 	std::shared_ptr<mavlink::Mavlink> mavlink() { return _mavlink; };
 	std::shared_ptr<bt::Bluetooth> bluetooth() { return _bluetooth; };
 
 	void set_next_state(states::AppState state);
 
 private:
-	uint64_t _app_start_time {};
 	volatile std::atomic<bool> _should_exit {};
 
 	// Bluetooth interface

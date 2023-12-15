@@ -7,6 +7,8 @@
 #include <helpers.hpp>
 #include <CircularBuffer.hpp>
 
+#include <opendroneid.h>
+
 namespace txr { class Transmitter; }
 
 namespace states
@@ -26,7 +28,7 @@ public:
 	virtual void on_enter() = 0;
 	virtual void on_exit() = 0;
 	virtual bool can_transition_to(AppState state) = 0;
-private:
+protected:
 	T* _parent {};
 };
 
@@ -39,6 +41,7 @@ public:
 	virtual bool can_transition_to(AppState state) override;
 
 private:
+	void create_message_pack(struct ODID_UAS_Data* uasData, struct ODID_MessagePack_encoded* pack_enc);
 };
 
 class State2 : public State<txr::Transmitter>
