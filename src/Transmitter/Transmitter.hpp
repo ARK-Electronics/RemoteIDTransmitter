@@ -4,7 +4,6 @@
 #include <Mavlink.hpp>
 
 #include <parameters.hpp>
-#include <states/base/State.hpp>
 #include <ThreadSafeQueue.hpp>
 
 #include <memory>
@@ -35,7 +34,6 @@ public:
 	void stop();
 
 	void run_state_machine();
-	void handle_state_transition(states::AppState next_state);
 
 	std::vector<mavlink::Parameter> mavlink_param_request_list_cb();
 	bool mavlink_param_set_cb(mavlink::Parameter* param);
@@ -43,7 +41,6 @@ public:
 	std::shared_ptr<mavlink::Mavlink> mavlink() { return _mavlink; };
 	std::shared_ptr<bt::Bluetooth> bluetooth() { return _bluetooth; };
 
-	void set_next_state(states::AppState state);
 
 private:
 	volatile std::atomic<bool> _should_exit {};
@@ -56,21 +53,10 @@ private:
 	mavlink::ConfigurationSettings _mavlink_settings {};
 	std::shared_ptr<mavlink::Mavlink> _mavlink {};
 
-	// States
-	states::AppState _current_state {};
-	states::AppState _next_state {};
-
-	// State enum to object map
-	std::unordered_map<states::AppState, std::shared_ptr<states::State<Transmitter>>> _states_map = {
-		std::make_pair(states::AppState::STATE_1, std::make_shared<states::State1>()),
-		std::make_pair(states::AppState::STATE_2, std::make_shared<states::State2>()),
-		std::make_pair(states::AppState::STATE_3, std::make_shared<states::State3>()),
-	};
+	void create_message_pack(struct ODID_UAS_Data* uasData, struct ODID_MessagePack_encoded* pack_enc);
 
 	void set_sw_version(const std::string& version);
 	const std::string get_sw_version();
-
-	std::string state_string(const states::AppState state);
 };
 
 } // end namespace txr

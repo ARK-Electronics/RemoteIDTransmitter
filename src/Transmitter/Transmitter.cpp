@@ -59,9 +59,6 @@ bool Transmitter::start()
 		return false;
 	}
 
-	_current_state = states::AppState::STATE_1;
-	_states_map[_current_state]->on_enter();
-
 	return true;
 }
 
@@ -82,48 +79,82 @@ void Transmitter::run_state_machine()
 			params::load();
 		}
 
-		// NOTE: the 'set_next_state' and 'request_next_state' functions already check if the transition is possible
-		if (_current_state != _next_state) {
-			handle_state_transition(_next_state);
-		}
+		LOG("Sending BT5 message pack");
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-		_states_map[_current_state]->run();
+		struct ODID_UAS_Data uasData = {};
+		struct ODID_MessagePack_encoded encoded = {};
+
+		// Testing
+		uasData.BasicID[0].UAType = ODID_UATYPE_CAPTIVE_BALLOON;
+
+		LOG("creating message pack");
+		create_message_pack(&uasData, &encoded);
+
+		int msg_counter = 1;
+		int set = 1; // set=1 BT5
+
+		LOG("sending message pack");
+		_bluetooth->hci_le_set_extended_advertising_data_pack(set, &encoded, msg_counter);
 	}
 }
 
-void Transmitter::handle_state_transition(states::AppState next_state)
+void Transmitter::create_message_pack(struct ODID_UAS_Data* uasData, struct ODID_MessagePack_encoded* pack_enc)
 {
-	_states_map[_current_state]->on_exit();
+	union ODID_Message_encoded encoded = { 0 };
+	ODID_MessagePack_data pack_data = { 0 };
+	pack_data.SingleMessageSize = ODID_MESSAGE_SIZE;
+	pack_data.MsgPackSize = 9;
 
-	_current_state = next_state;
-	_next_state = _current_state;
+	if (encodeBasicIDMessage((ODID_BasicID_encoded*) &encoded, &uasData->BasicID[0]) != ODID_SUCCESS)
+		printf("Error: Failed to encode Basic ID\n");
 
-	_states_map[_current_state]->on_enter();
+	memcpy(&pack_data.Messages[0], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeBasicIDMessage((ODID_BasicID_encoded*) &encoded, &uasData->BasicID[1]) != ODID_SUCCESS)
+		printf("Error: Failed to encode Basic ID\n");
+
+	memcpy(&pack_data.Messages[1], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeLocationMessage((ODID_Location_encoded*) &encoded, &uasData->Location) != ODID_SUCCESS)
+		printf("Error: Failed to encode Location\n");
+
+	memcpy(&pack_data.Messages[2], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeAuthMessage((ODID_Auth_encoded*) &encoded, &uasData->Auth[0]) != ODID_SUCCESS)
+		printf("Error: Failed to encode Auth 0\n");
+
+	memcpy(&pack_data.Messages[3], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeAuthMessage((ODID_Auth_encoded*) &encoded, &uasData->Auth[1]) != ODID_SUCCESS)
+		printf("Error: Failed to encode Auth 1\n");
+
+	memcpy(&pack_data.Messages[4], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeAuthMessage((ODID_Auth_encoded*) &encoded, &uasData->Auth[2]) != ODID_SUCCESS)
+		printf("Error: Failed to encode Auth 2\n");
+
+	memcpy(&pack_data.Messages[5], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeSelfIDMessage((ODID_SelfID_encoded*) &encoded, &uasData->SelfID) != ODID_SUCCESS)
+		printf("Error: Failed to encode Self ID\n");
+
+	memcpy(&pack_data.Messages[6], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeSystemMessage((ODID_System_encoded*) &encoded, &uasData->System) != ODID_SUCCESS)
+		printf("Error: Failed to encode System\n");
+
+	memcpy(&pack_data.Messages[7], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeOperatorIDMessage((ODID_OperatorID_encoded*) &encoded, &uasData->OperatorID) != ODID_SUCCESS)
+		printf("Error: Failed to encode Operator ID\n");
+
+	memcpy(&pack_data.Messages[8], &encoded, ODID_MESSAGE_SIZE);
+
+	if (encodeMessagePack(pack_enc, &pack_data) != ODID_SUCCESS)
+		printf("Error: Failed to encode message pack_data\n");
 }
 
-void Transmitter::set_next_state(states::AppState state)
-{
-	if (!_states_map[_current_state]->can_transition_to(state)) {
-		LOG(RED_TEXT "Cannot transition from: %s --> %s" NORMAL_TEXT, state_string(_current_state).c_str(), state_string(state).c_str());
-		return;
-	}
-
-	LOG("Setting next transition: %s --> %s", state_string(_current_state).c_str(), state_string(state).c_str());
-	_next_state = state;
-}
-
-std::string Transmitter::state_string(const states::AppState state)
-{
-	switch (state) {
-	case states::AppState::STATE_1: return "STATE_1";
-
-	case states::AppState::STATE_2: return "STATE_2";
-
-	case states::AppState::STATE_3: return "STATE_3";
-
-	default: return "UNDEFINED";
-	}
-}
 
 std::vector<mavlink::Parameter> Transmitter::mavlink_param_request_list_cb()
 {

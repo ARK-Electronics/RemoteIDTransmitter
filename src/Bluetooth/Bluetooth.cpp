@@ -25,11 +25,13 @@ Bluetooth::Bluetooth(const Settings& settings)
 
 void Bluetooth::initialize()
 {
+	LOG("Initializing Bluetooth");
 	_mac = generate_random_mac_address();
 
 	_dd = hci_open();
 
 	if (_dd < 0) {
+		LOG(RED_TEXT "hci_open() failed!" NORMAL_TEXT);
 		// TODO: handle error downstream
 		return;
 	}

@@ -60,9 +60,6 @@ add_executable(rid-transmitter
     src/Bluetooth/Bluetooth.cpp
     src/Bluetooth/print_bt_features.c
     src/Transmitter/Transmitter.cpp
-    src/Transmitter/states/State1.cpp
-    src/Transmitter/states/State2.cpp
-    src/Transmitter/states/State3.cpp
     src/Transmitter/parameters/parameters.cpp
     src/main.cpp
 )
