@@ -13,8 +13,8 @@ struct Settings {
 	std::string hci_device_name;
 	bool use_bt4 {};
 	bool use_bt5 {};
-	int bt4_set {};
-	int bt5_set {};
+	uint8_t bt4_set {};
+	uint8_t bt5_set {};
 };
 
 class Bluetooth

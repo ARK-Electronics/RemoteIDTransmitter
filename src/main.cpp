@@ -48,7 +48,7 @@ int main(int argc, const char** argv)
 
 	bt::Settings bt_settings = {
 		.hci_device_name = "hci0",
-		.use_bt4 = true,
+		.use_bt4 = false,
 		.use_bt5 = true,
 		.bt4_set = 0,
 		.bt5_set = 1,

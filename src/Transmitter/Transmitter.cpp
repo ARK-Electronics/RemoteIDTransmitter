@@ -92,7 +92,7 @@ void Transmitter::run_state_machine()
 		create_message_pack(&uasData, &encoded);
 
 		int msg_counter = 1;
-		int set = 1; // set=1 BT5
+		uint8_t set = 1; // set=1 BT5
 
 		LOG("sending message pack");
 		_bluetooth->hci_le_set_extended_advertising_data_pack(set, &encoded, msg_counter);

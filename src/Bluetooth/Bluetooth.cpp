@@ -52,6 +52,21 @@ void Bluetooth::initialize()
 	this->hci_le_set_extended_advertising_enable();
 }
 
+void Bluetooth::hci_reset()
+{
+	uint8_t ogf = OGF_HOST_CTL; // Opcode Group Field. LE Controller Commands
+	uint16_t ocf = OCF_RESET;
+	send_command(ogf, ocf, nullptr, 0);
+}
+
+void Bluetooth::hci_stop_transmit()
+{
+	hci_le_set_advertising_disable();
+	hci_le_set_extended_advertising_disable();
+	hci_le_remove_advertising_set(_settings.bt4_set);
+	hci_le_remove_advertising_set(_settings.bt5_set);
+}
+
 void Bluetooth::stop()
 {
 	// TODO:
@@ -85,13 +100,6 @@ int Bluetooth::hci_open()
 	}
 
 	return device_descriptor;
-}
-
-void Bluetooth::hci_reset()
-{
-	uint8_t ogf = OGF_HOST_CTL; // Opcode Group Field. LE Controller Commands
-	uint16_t ocf = OCF_RESET;
-	send_command(ogf, ocf, nullptr, 0);
 }
 
 void Bluetooth::hci_le_set_extended_advertising_data_pack(uint8_t set, const struct ODID_MessagePack_encoded* pack_enc, uint8_t msg_counter)
@@ -135,25 +143,25 @@ void Bluetooth::hci_le_set_extended_advertising_disable()
 {
 	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
 	uint16_t ocf = 0x39;      // Opcode Command Field: LE Set Extended Advertising Enable
-	uint8_t buf[] = { 0x00,   // Enable: 0 = Advertising is disabled
-			  0x00
-			}; // Number_of_Sets: 0 = Disable all advertising sets
+	uint8_t buf[] = {
+		0x00,   // Enable: 0 = Advertising is disabled
+		0x00 	// Number_of_Sets: 0 = Disable all advertising sets
+	};
 	send_command(ogf, ocf, buf, sizeof(buf));
 }
 
 // Max two advertising sets is supported by this function currently
 void Bluetooth::hci_le_set_extended_advertising_enable()
 {
-	// TODO: macro opcode command fields
-	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
-	uint16_t ocf = 0x39;      // Opcode Command Field: LE Set Extended Advertising Enable
+	LOG("enabling advertising");
 
-	// Enable: 1 = Advertising is enabled
-	// Number_of_Sets: 1 = Enable advertising for the advertising set specified by the Advertising_Handle[i] parameter
-	// Advertising_Handle[i]:
-	// Duration[i]: 0 = No advertising duration. Advertising to continue until the Host disables it
-	// Max_Extended_Advertising_Events[i]: 0 = No maximum number of advertising events
-	uint8_t buf[8] = {}; // Sized for at most 2 sets
+    uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
+    uint16_t ocf = 0x39;      // Opcode Command Field: LE Set Extended Advertising Enable
+    uint8_t buf[] = { 0x01,   // Enable: 1 = Advertising is enabled
+                      0x01,   // Number_of_Sets: Number of advertising sets to enable or disable
+                      0x00, 0x00,   // Advertising_Handle[i]:
+                      0x00, 0x00,   // Duration[i]: 0 = No advertising duration. Advertising to continue until the Host disables it
+                      0x00, 0x00 }; // Max_Extended_Advertising_Events[i]: 0 = No maximum number of advertising events
 
 	if (_settings.use_bt4 && _settings.use_bt5) {
 		buf[1] = 2;
@@ -161,11 +169,9 @@ void Bluetooth::hci_le_set_extended_advertising_enable()
 		buf[3] = _settings.bt5_set;
 
 	} else if (_settings.use_bt4) {
-		buf[1] = 1;
 		buf[2] = _settings.bt4_set;
 
 	} else if (_settings.use_bt5) {
-		buf[1] = 1;
 		buf[2] = _settings.bt5_set;
 	}
 
@@ -184,14 +190,6 @@ void Bluetooth::hci_le_read_local_supported_features()
 	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
 	uint16_t ocf = OCF_LE_READ_LOCAL_SUPPORTED_FEATURES;
 	send_command(ogf, ocf, nullptr, 0);
-}
-
-void Bluetooth::hci_stop_transmit()
-{
-	hci_le_set_advertising_disable();
-	hci_le_set_extended_advertising_disable();
-	hci_le_remove_advertising_set(_settings.bt4_set);
-	hci_le_remove_advertising_set(_settings.bt5_set);
 }
 
 void Bluetooth::hci_le_set_extended_advertising_parameters(uint8_t set, int interval_ms, bool long_range)
@@ -244,10 +242,11 @@ void Bluetooth::hci_le_set_advertising_set_random_address(uint8_t set)
 
 void Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length)
 {
-	if (hci_send_cmd(_dd, ogf, ocf, length, data) < 0) {
-		// exit(EXIT_FAILURE);
+	int result = hci_send_cmd(_dd, ogf, ocf, length, data);
 
+	if (result < 0) {
 		// TODO: handle error
+		LOG("send_command failed: result: %d ogf: %u", result, ogf);
 		return;
 	}
 
