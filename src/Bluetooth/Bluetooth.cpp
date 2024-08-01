@@ -155,13 +155,14 @@ void Bluetooth::hci_le_set_extended_advertising_enable()
 {
 	LOG("enabling advertising");
 
-    uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
-    uint16_t ocf = 0x39;      // Opcode Command Field: LE Set Extended Advertising Enable
-    uint8_t buf[] = { 0x01,   // Enable: 1 = Advertising is enabled
-                      0x01,   // Number_of_Sets: Number of advertising sets to enable or disable
-                      0x00, 0x00,   // Advertising_Handle[i]:
-                      0x00, 0x00,   // Duration[i]: 0 = No advertising duration. Advertising to continue until the Host disables it
-                      0x00, 0x00 }; // Max_Extended_Advertising_Events[i]: 0 = No maximum number of advertising events
+	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
+	uint16_t ocf = 0x39;      // Opcode Command Field: LE Set Extended Advertising Enable
+	uint8_t buf[] = { 0x01,   // Enable: 1 = Advertising is enabled
+			  0x01,   // Number_of_Sets: Number of advertising sets to enable or disable
+			  0x00, 0x00,   // Advertising_Handle[i]:
+			  0x00, 0x00,   // Duration[i]: 0 = No advertising duration. Advertising to continue until the Host disables it
+			  0x00, 0x00
+			}; // Max_Extended_Advertising_Events[i]: 0 = No maximum number of advertising events
 
 	if (_settings.use_bt4 && _settings.use_bt5) {
 		buf[1] = 2;
