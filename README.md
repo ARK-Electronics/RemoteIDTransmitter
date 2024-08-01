@@ -4,5 +4,9 @@ Transmit RemoteID packets via Bluetooth on Linux.
 TODO:
 **Prerequisites**
 ```bash
-sudo apt install astyle
+sudo apt-get install -y \
+	astyle \
+	bluez \
+	bluez-tools \
+	libbluetooth-dev
 ```

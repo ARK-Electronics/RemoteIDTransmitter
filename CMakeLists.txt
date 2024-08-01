@@ -18,6 +18,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
 ##### Add libraries
 add_subdirectory(libraries)
 
+# Include bluez
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(BLUEZ REQUIRED bluez)
+include_directories(${BLUEZ_INCLUDE_DIRS})
+link_directories(${BLUEZ_LIBRARY_DIRS})
+
+
 # Determine git version
 exec_program(
     "git"
@@ -49,14 +56,12 @@ include_directories(
     src/Transmitter
     src/Transmitter/parameters
     libraries/opendroneid-core-c/libopendroneid
-    libraries/bluez
+    ${BLUEZ_INCLUDE_DIRS}
 )
 
 # Create executable
 add_executable(rid-transmitter
     libraries/opendroneid-core-c/libopendroneid/opendroneid.c
-    libraries/bluez/lib/hci.c
-    libraries/bluez/lib/bluetooth.c
     src/Bluetooth/Bluetooth.cpp
     src/Bluetooth/print_bt_features.c
     src/Transmitter/Transmitter.cpp
@@ -67,4 +72,5 @@ add_executable(rid-transmitter
 target_link_libraries(rid-transmitter
     mavlink-cpp
     argparse
+    ${BLUEZ_LIBRARIES}
 )
