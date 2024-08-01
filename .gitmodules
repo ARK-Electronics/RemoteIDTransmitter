@@ -1,12 +1,12 @@
 [submodule "libraries/argparse"]
 	path = libraries/argparse
-	url = git@github.com:p-ranav/argparse.git
+	url = https://github.com/p-ranav/argparse.git
 [submodule "libraries/mavlink-cpp"]
 	path = libraries/mavlink-cpp
-	url = git@github.com:dakejahl/mavlink-cpp.git
+	url = https://github.com/dakejahl/mavlink-cpp.git
 [submodule "libraries/bluez"]
 	path = libraries/bluez
-	url = git@github.com:bluez/bluez.git
+	url = https://github.com/bluez/bluez.git
 [submodule "libraries/opendroneid-core-c"]
 	path = libraries/opendroneid-core-c
-	url = git@github.com:opendroneid/opendroneid-core-c.git
+	url = https://github.com/opendroneid/opendroneid-core-c.git
