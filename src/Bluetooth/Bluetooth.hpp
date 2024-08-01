@@ -37,7 +37,7 @@ private:
 	void hci_reset();
 	void hci_stop_transmit();
 
-	void send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length);
+	bool send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length);
 
 	// void hci_le_set_extended_advertising_data(uint8_t set, const union ODID_Message_encoded* encoded, uint8_t msg_counter);
 

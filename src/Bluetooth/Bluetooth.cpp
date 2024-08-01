@@ -241,14 +241,17 @@ void Bluetooth::hci_le_set_advertising_set_random_address(uint8_t set)
 	send_command(ogf, ocf, buf, sizeof(buf));
 }
 
-void Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length)
+bool Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length)
 {
+
+	LOG("send_command\n ogf: %u ocf: %u length: %i", ogf, ocf, length);
+
 	int result = hci_send_cmd(_dd, ogf, ocf, length, data);
 
 	if (result < 0) {
 		// TODO: handle error
-		LOG("send_command failed: result: %d ogf: %u", result, ogf);
-		return;
+		LOG("send_command failed: result: %d", result);
+		return false;
 	}
 
 	unsigned char buf[HCI_MAX_EVENT_SIZE] = { 0 }, *ptr;
@@ -263,7 +266,7 @@ void Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int lengt
 		}
 
 		LOG("While loop for reading event failed");
-		return;
+		return false;
 	}
 
 	hdr = (hci_event_hdr*)(buf + 1);
@@ -305,6 +308,8 @@ void Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int lengt
 		LOG("Received unknown event: 0x%X", hdr->evt);
 		break;
 	}
+
+	return true;
 }
 
 std::string Bluetooth::generate_random_mac_address()
