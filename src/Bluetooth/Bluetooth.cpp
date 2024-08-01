@@ -243,9 +243,6 @@ void Bluetooth::hci_le_set_advertising_set_random_address(uint8_t set)
 
 bool Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length)
 {
-
-	LOG("send_command\n ogf: %u ocf: %u length: %i", ogf, ocf, length);
-
 	int result = hci_send_cmd(_dd, ogf, ocf, length, data);
 
 	if (result < 0) {
