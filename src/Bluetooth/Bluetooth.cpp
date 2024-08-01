@@ -176,7 +176,9 @@ void Bluetooth::hci_le_set_extended_advertising_enable()
 		buf[2] = _settings.bt5_set;
 	}
 
-	send_command(ogf, ocf, buf, sizeof(buf));
+	if (!send_command(ogf, ocf, buf, sizeof(buf))) {
+		LOG(RED_TEXT "enabling advertising failed!" NORMAL_TEXT);
+	}
 }
 
 void Bluetooth::hci_le_remove_advertising_set(uint8_t set)
@@ -285,7 +287,7 @@ bool Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int lengt
 		memcpy(rparam, ptr, len);
 
 		if (rparam[0] && ocf != 0x3C) {
-			LOG("Command 0x%X returned error 0x%X", ocf, rparam[0]);
+			LOG(RED_TEXT "Command 0x%X returned error 0x%X" NORMAL_TEXT, ocf, rparam[0]);
 		}
 
 		if (ocf == OCF_LE_READ_LOCAL_SUPPORTED_FEATURES) {
