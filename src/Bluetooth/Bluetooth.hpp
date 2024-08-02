@@ -45,7 +45,7 @@ private:
 	void hci_reset();
 	void hci_stop_transmit();
 
-	bool send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length);
+	bool send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, uint8_t length);
 
 	// Returns bytes read
 	enum class CommandResponse {

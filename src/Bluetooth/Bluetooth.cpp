@@ -196,14 +196,12 @@ void Bluetooth::hci_le_set_extended_advertising_enable()
 {
 	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
 	uint16_t ocf = 0x0039;      // Opcode Command Field: LE Set Extended Advertising Enable
-	uint8_t buf[] = { 0x01,   // Enable: 1 = Advertising is enabled
-			  0x01,   // Number_of_Sets: Number of advertising sets to enable or disable
-			  0x00, 0x00,   // Advertising_Handle[i]:
-			  0x00, 0x00,   // Duration[i]: 0 = No advertising duration. Advertising to continue until the Host disables it
-			  0x00, 0x00
-			}; // Max_Extended_Advertising_Events[i]: 0 = No maximum number of advertising events
 
-	int length = 0;
+	uint8_t buf[9] = {};
+
+	// enable(1) | num_sets(1) | AdvHandle(1*num_sets) | Duration(2*num_sets) | MaxAdvEvt(1*num_sets)
+
+	uint8_t length = 0;
 
 	buf[0] = 1; // enable
 
@@ -218,13 +216,13 @@ void Bluetooth::hci_le_set_extended_advertising_enable()
 		LOG("enabling advertising for BT4");
 		buf[1] = 1; // num sets
 		buf[2] = BT4_SET;
-		length = 5;
+		length = 6;
 
 	} else if (_settings.use_bt5) {
 		LOG("enabling advertising for BT5");
 		buf[1] = 1; // num sets
 		buf[2] = BT5_SET;
-		length = 5;
+		length = 6;
 	}
 
 	if (send_command(ogf, ocf, buf, length)) {
@@ -425,7 +423,7 @@ void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const s
 	uint16_t bytes_sent = 0;
 
 	while (bytes_sent < total_bytes_to_send) {
-		uint16_t num_bytes = 0;
+		uint8_t num_bytes = 0;
 		uint16_t bytes_remaning = total_bytes_to_send - bytes_sent;
 
 		if (bytes_remaning > _max_adv_data_len) {
@@ -565,7 +563,7 @@ Bluetooth::CommandResponse Bluetooth::read_command_response(uint16_t opcode, uin
 	return CommandResponse::Error;
 }
 
-bool Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length)
+bool Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, uint8_t length)
 {
 	uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
 	LOG("sending opcode: %u", opcode);
