@@ -32,7 +32,7 @@ public:
 
 	void stop();
 
-	void hci_le_set_extended_advertising_data(BluetoothMode mode, const struct ODID_MessagePack_encoded* pack_enc, uint8_t msg_counter);
+	void hci_le_set_extended_advertising_data(BluetoothMode mode, const struct ODID_MessagePack_encoded* encoded_data, uint8_t msg_counter);
 
 private:
 
@@ -55,7 +55,6 @@ private:
 		Success,
 	};
 	CommandResponse read_command_response(uint16_t opcode, uint8_t* response, int response_size);
-
 
 	uint16_t hci_le_read_maximum_advertising_data_length();
 

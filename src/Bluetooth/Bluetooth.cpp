@@ -334,35 +334,55 @@ void Bluetooth::hci_le_set_extended_advertising_parameters(BluetoothMode mode, i
 	}
 }
 
-void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const struct ODID_MessagePack_encoded* pack_enc,
+void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const struct ODID_MessagePack_encoded* encoded_data,
 		uint8_t msg_counter)
 {
-	// TODO: LE Read Maximum Advertising Data Length
-
 	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
 	uint16_t ocf = 0x0037;      // Opcode Command Field: LE Set Extended Advertising Data
 	uint8_t buf[10 + 3 + ODID_PACK_MAX_MESSAGES * ODID_MESSAGE_SIZE] = {
 		0x00,   // Advertising_Handle: Used to identify an advertising set
 		0x03,   // Operation: 3 = Complete extended advertising data
-		// 0x01,   // Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
-		0x00,   // The Controller may fragment all Host advertising data
+		0x01,   // Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
 		0x1F,   // Advertising_Data_Length: The number of octets in the Advertising Data parameter
+		// BEGIN ODID
+		// AD Info
 		0x1E,   // The length of the following data field
 		0x16,   // 16 = GAP AD Type = "Service Data - 16-bit UUID"
 		0xFA, 0xFF, // 0xFFFA = ASTM International, ASTM Remote ID
+		// App code
 		0x0D,   // 0x0D = AD Application Code within the ASTM address space = Open Drone ID
-		0x00,   // xx = 8-bit message counter starting at 0x00 and wrapping around at 0xFF
-		0x00
-	}; // 3 + ODID_PACK_MAX_MESSAGES*ODID_MESSAGE_SIZE byte Drone ID message pack data
+		// Msg counter
+		0x00   // xx = 8-bit message counter starting at 0x00 and wrapping around at 0xFF
+	};
+
 	buf[0] = mode == BluetoothMode::BT4 ? BT4_SET : BT5_SET;
 	buf[9] = msg_counter;
 
-	int amount = pack_enc->MsgPackSize;
-	buf[3] = 1 + 5 + 3 + amount * ODID_MESSAGE_SIZE;
-	buf[4] = 5 + 3 + amount * ODID_MESSAGE_SIZE;
+	// The size of an ODID_MessagePack_encoded structure
+	uint16_t encoded_data_size = 3 + encoded_data->MsgPackSize * ODID_MESSAGE_SIZE;
+	// The size of that shit that comes before the ODID msg
+	uint16_t adv_data_hdr_size = 6; // AD len(1), Type(1), UUID(2), AppCode(1), Counter(1)
+	// Total bytes we need to send out
+	uint16_t total_bytes_to_send = adv_data_hdr_size + encoded_data_size;
 
-	for (int i = 0; i < 3 + amount * ODID_MESSAGE_SIZE; i++)
-		buf[10 + i] = ((char*) pack_enc)[i];
+	uint8_t adv_data_length = 0;
+	uint16_t offset = 0;
+
+	// Iterate over all of the data
+	// for (int i = 0; i < 3 + encoded_data->MsgPackSize * ODID_MESSAGE_SIZE; i++) {
+	// 	buf[10 + i] = ((char*) encoded_data)[i];
+	// }
+
+	// Advertising_Data_Length
+	buf[3] = total_bytes_to_send;
+	// Begin {Advertising_Data} (ODID data)
+	// Length
+	buf[4] = total_bytes_to_send - 1;
+
+	// Encoded data
+	for (int i = 0; i < 3 + encoded_data->MsgPackSize * ODID_MESSAGE_SIZE; i++) {
+		buf[10 + i] = ((char*) encoded_data)[i];
+	}
 
 	if (send_command(ogf, ocf, buf, sizeof(buf))) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
