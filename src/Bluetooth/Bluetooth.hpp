@@ -32,6 +32,8 @@ public:
 
 	void stop();
 
+	void hci_le_set_extended_advertising_data(BluetoothMode mode, const ODID_Message_encoded* data, uint8_t count);
+
 	void hci_le_set_extended_advertising_data(BluetoothMode mode, const struct ODID_MessagePack_encoded* encoded_data, uint8_t msg_counter);
 
 private:

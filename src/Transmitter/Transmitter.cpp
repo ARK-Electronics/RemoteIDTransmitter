@@ -88,19 +88,26 @@ void Transmitter::run_state_machine()
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 		struct ODID_UAS_Data uasData = {};
-		struct ODID_MessagePack_encoded encoded = {};
 
 		// Testing
 		uasData.BasicID[0].UAType = ODID_UATYPE_CAPTIVE_BALLOON;
 
-		LOG("creating message pack");
-		create_message_pack(&uasData, &encoded);
+		send_single_messages(&uasData, &msg_counter);
 
-		LOG("sending message pack");
-
-		// Only send BT5 (for now)
-		_bluetooth->hci_le_set_extended_advertising_data(bt::BluetoothMode::BT5, &encoded, ++msg_counter);
+		// create_message_pack(&uasData, &encoded);
+		// // Only send BT5 (for now)
+		// _bluetooth->hci_le_set_extended_advertising_data(bt::BluetoothMode::BT5, &encoded, ++msg_counter);
 	}
+}
+
+void Transmitter::send_single_messages(struct ODID_UAS_Data* uasData, int* count)
+{
+	union ODID_Message_encoded encoded;
+	memset(&encoded, 0, sizeof(union ODID_Message_encoded));
+
+	encodeBasicIDMessage((ODID_BasicID_encoded*) &encoded, &uasData->BasicID[0]);
+
+	_bluetooth->hci_le_set_extended_advertising_data(bt::BluetoothMode::BT5, &encoded, ++(*count));
 }
 
 void Transmitter::create_message_pack(struct ODID_UAS_Data* uasData, struct ODID_MessagePack_encoded* pack_enc)

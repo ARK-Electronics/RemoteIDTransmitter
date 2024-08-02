@@ -334,6 +334,47 @@ void Bluetooth::hci_le_set_extended_advertising_parameters(BluetoothMode mode, i
 	}
 }
 
+void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const ODID_Message_encoded* data, uint8_t count)
+{
+	uint16_t adv_data_hdr_size = 6; // AD len(1), Type(1), UUID(2), AppCode(1), Counter(1)
+	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
+	uint16_t ocf = 0x0037;      // Opcode Command Field: LE Set Extended Advertising Data
+	uint8_t buf[4 + adv_data_hdr_size + ODID_MESSAGE_SIZE] = {
+		0x00,   // Advertising_Handle: Used to identify an advertising set
+		0x03,   // Operation: 3 = Complete extended advertising data
+		0x01,   // Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
+		0x1F,   // Advertising_Data_Length: The number of octets in the Advertising Data parameter
+		// BEGIN ODID
+		// AD Info
+		0x1E,   // The length of the following data field
+		0x16,   // 16 = GAP AD Type = "Service Data - 16-bit UUID"
+		0xFA, 0xFF, // 0xFFFA = ASTM International, ASTM Remote ID
+		// App code
+		0x0D,   // 0x0D = AD Application Code within the ASTM address space = Open Drone ID
+		// Msg counter
+		0x00   // xx = 8-bit message counter starting at 0x00 and wrapping around at 0xFF
+	};
+
+	buf[0] = mode == BluetoothMode::BT4 ? BT4_SET : BT5_SET;
+	buf[9] = count;
+
+	buf[3] = ODID_MESSAGE_SIZE + adv_data_hdr_size;
+	buf[4] = ODID_MESSAGE_SIZE + adv_data_hdr_size - 1;
+
+	memcpy(&buf[10], (uint8_t*)data, ODID_MESSAGE_SIZE);
+
+	// Send off the data
+	if (send_command(ogf, ocf, buf, sizeof(buf))) {
+		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
+		uint8_t status = {};
+		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
+
+		if (response != CommandResponse::Success) {
+			LOG(RED_TEXT "Failed to set extended advertising data: error %u" NORMAL_TEXT, status);
+		}
+	}
+}
+
 void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const struct ODID_MessagePack_encoded* encoded_data,
 		uint8_t msg_counter)
 {
@@ -342,7 +383,7 @@ void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const s
 	uint8_t buf[10 + 3 + ODID_PACK_MAX_MESSAGES * ODID_MESSAGE_SIZE] = {
 		0x00,   // Advertising_Handle: Used to identify an advertising set
 		0x03,   // Operation: 3 = Complete extended advertising data
-		0x01,   // Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
+		0x00,   // Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
 		0x1F,   // Advertising_Data_Length: The number of octets in the Advertising Data parameter
 		// BEGIN ODID
 		// AD Info
@@ -364,35 +405,70 @@ void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const s
 	uint16_t adv_data_hdr_size = 6; // AD len(1), Type(1), UUID(2), AppCode(1), Counter(1)
 	// Total bytes we need to send out
 	uint16_t total_bytes_to_send = adv_data_hdr_size + encoded_data_size;
+	LOG("total_bytes_to_send: %u", total_bytes_to_send);
 
-	uint8_t adv_data_length = 0;
-	uint16_t offset = 0;
+	uint16_t bytes_sent = 0;
 
-	// Iterate over all of the data
-	// for (int i = 0; i < 3 + encoded_data->MsgPackSize * ODID_MESSAGE_SIZE; i++) {
-	// 	buf[10 + i] = ((char*) encoded_data)[i];
-	// }
+	while (bytes_sent < total_bytes_to_send) {
+		uint16_t num_bytes = 0;
+		uint16_t bytes_remaning = total_bytes_to_send - bytes_sent;
 
-	// Advertising_Data_Length
-	buf[3] = total_bytes_to_send;
-	// Begin {Advertising_Data} (ODID data)
-	// Length
-	buf[4] = total_bytes_to_send - 1;
+		if (bytes_remaning > _max_adv_data_len) {
+			num_bytes = _max_adv_data_len;
 
-	// Encoded data
-	for (int i = 0; i < 3 + encoded_data->MsgPackSize * ODID_MESSAGE_SIZE; i++) {
-		buf[10 + i] = ((char*) encoded_data)[i];
-	}
-
-	if (send_command(ogf, ocf, buf, sizeof(buf))) {
-		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
-		uint8_t status = {};
-		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
-
-		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to set extended advertising data: error %u" NORMAL_TEXT, status);
+		} else {
+			num_bytes = bytes_remaning;
 		}
+
+		uint8_t* ptr = &buf[10];
+
+		if (bytes_sent == 0) {
+			memcpy(ptr, (uint8_t*)encoded_data + bytes_sent, num_bytes - adv_data_hdr_size);
+
+		} else {
+			ptr = &buf[4];
+			memcpy(ptr, (uint8_t*)encoded_data + bytes_sent, num_bytes);
+		}
+
+		if (total_bytes_to_send > _max_adv_data_len) {
+
+			if (bytes_sent == 0) {
+				LOG("first fragment: %u", num_bytes);
+				buf[1] = 1; // first fragmet
+
+			} else if ((bytes_sent + num_bytes) == total_bytes_to_send) {
+				LOG("last fragment: %u", num_bytes);
+				buf[1] = 2; // last fragmet
+
+			} else {
+				LOG("intermediate fragment %u", num_bytes);
+				buf[1] = 0; // intermediate fragmet
+			}
+
+		} else {
+			LOG("complete message %u", num_bytes);
+			buf[1] = 3; // complete
+		}
+
+		buf[3] = num_bytes;
+		buf[4] = num_bytes - 1;
+
+		// Send off the data
+		if (send_command(ogf, ocf, buf, num_bytes)) {
+			uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
+			uint8_t status = {};
+			CommandResponse response = read_command_response(opcode, &status, sizeof(status));
+
+			if (response != CommandResponse::Success) {
+				LOG(RED_TEXT "Failed to set extended advertising data: error %u" NORMAL_TEXT, status);
+			}
+		}
+
+		bytes_sent += num_bytes;
+		LOG("bytes_sent %u", bytes_sent);
 	}
+
+	LOG("finished");
 }
 
 Bluetooth::CommandResponse Bluetooth::read_command_response(uint16_t opcode, uint8_t* response, int response_size)
