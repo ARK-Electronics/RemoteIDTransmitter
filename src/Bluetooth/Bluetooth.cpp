@@ -246,7 +246,7 @@ void Bluetooth::hci_le_set_advertising_set_random_address(BluetoothMode mode)
 
 	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
 	uint16_t ocf = 0x0035;      // Opcode Command Field: LE Set Advertising Set Random Address
-	uint8_t buf[_mac.size() + 1] = {0x00};   // Advertising_Handle: Used to identify an advertising set
+	uint8_t buf[_mac.size() + 1] = {};   // Advertising_Handle: Used to identify an advertising set
 
 	buf[0] = mode == BluetoothMode::BT4 ? BT4_SET : BT5_SET;
 	memcpy(&buf[1], _mac.data(), _mac.size());

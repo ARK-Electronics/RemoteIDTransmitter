@@ -20,8 +20,8 @@ enum class BluetoothMode {
 	BT5,
 };
 
-static constexpr uint8_t BT4_SET = 0;
-static constexpr uint8_t BT5_SET = 1;
+static constexpr uint8_t BT4_SET = 1;
+static constexpr uint8_t BT5_SET = 0;
 
 class Bluetooth
 {
