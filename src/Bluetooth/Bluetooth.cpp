@@ -126,7 +126,7 @@ void Bluetooth::hci_reset()
 		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to reset: error %u" NORMAL_TEXT, status);
+			LOG(RED_TEXT "Failed to reset: error 0x%x" NORMAL_TEXT, status);
 		}
 	}
 }
@@ -142,7 +142,7 @@ uint16_t Bluetooth::hci_le_read_maximum_advertising_data_length()
 		CommandResponse response = read_command_response(opcode, data, sizeof(data));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to set extended advertising data: error %u" NORMAL_TEXT, data[0]);
+			LOG(RED_TEXT "Failed to set extended advertising data: error 0x%x" NORMAL_TEXT, data[0]);
 		}
 	}
 
@@ -161,7 +161,7 @@ void Bluetooth::hci_le_set_advertising_disable()
 		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to set extended advertising data: error %u" NORMAL_TEXT, status);
+			LOG(RED_TEXT "Failed to set extended advertising data: error 0x%x" NORMAL_TEXT, status);
 		}
 	}
 }
@@ -181,7 +181,7 @@ void Bluetooth::hci_le_set_extended_advertising_disable()
 		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to set extended advertising disable: error %u" NORMAL_TEXT, status);
+			LOG(RED_TEXT "Failed to set extended advertising disable: error 0x%x" NORMAL_TEXT, status);
 		}
 	}
 }
@@ -218,7 +218,7 @@ void Bluetooth::hci_le_set_extended_advertising_enable()
 		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to set extended advertising enable: error %u" NORMAL_TEXT, status);
+			LOG(RED_TEXT "Failed to set extended advertising enable: error 0x%x" NORMAL_TEXT, status);
 		}
 	}
 }
@@ -235,7 +235,7 @@ void Bluetooth::hci_le_remove_advertising_set(BluetoothMode mode)
 		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to remove extended advertising set: error %u" NORMAL_TEXT, status);
+			LOG(RED_TEXT "Failed to remove extended advertising set: error 0x%x" NORMAL_TEXT, status);
 		}
 	}
 }
@@ -257,7 +257,7 @@ void Bluetooth::hci_le_set_advertising_set_random_address(BluetoothMode mode)
 		CommandResponse response = read_command_response(opcode, data, sizeof(data));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to set extended advertising random address: error %u" NORMAL_TEXT, data[0]);
+			LOG(RED_TEXT "Failed to set extended advertising random address: error 0x%x" NORMAL_TEXT, data[0]);
 		}
 	}
 }
@@ -278,7 +278,7 @@ void Bluetooth::hci_le_read_local_supported_features()
 			print_bt_le_features(&data[1], 8);
 
 		} else {
-			LOG(RED_TEXT "Failed to set read local supported features: error %u" NORMAL_TEXT, data[0]);
+			LOG(RED_TEXT "Failed to set read local supported features: error 0x%x" NORMAL_TEXT, data[0]);
 		}
 	}
 }
@@ -323,7 +323,7 @@ void Bluetooth::hci_le_set_extended_advertising_parameters(BluetoothMode mode, i
 		CommandResponse response = read_command_response(opcode, data, sizeof(data));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to set extended advertising parameters: error %u" NORMAL_TEXT, data[0]);
+			LOG(RED_TEXT "Failed to set extended advertising parameters: error 0x%x" NORMAL_TEXT, data[0]);
 		}
 
 		// Setting the extended advertising parameters for BT legacy also causes the controller to set
@@ -370,7 +370,7 @@ void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const O
 		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
 
 		if (response != CommandResponse::Success) {
-			LOG(RED_TEXT "Failed to set extended advertising data: error %u" NORMAL_TEXT, status);
+			LOG(RED_TEXT "Failed to set extended advertising data: error 0x%x" NORMAL_TEXT, status);
 		}
 	}
 }
@@ -460,7 +460,7 @@ void Bluetooth::hci_le_set_extended_advertising_data(BluetoothMode mode, const s
 			CommandResponse response = read_command_response(opcode, &status, sizeof(status));
 
 			if (response != CommandResponse::Success) {
-				LOG(RED_TEXT "Failed to set extended advertising data: error %u" NORMAL_TEXT, status);
+				LOG(RED_TEXT "Failed to set extended advertising data: error 0x%x" NORMAL_TEXT, status);
 			}
 		}
 
