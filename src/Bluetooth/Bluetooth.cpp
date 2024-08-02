@@ -48,14 +48,14 @@ bool Bluetooth::initialize()
 
 	// BT4
 	if (_settings.use_bt4) {
-		this->hci_le_set_advertising_set_random_address(BluetoothMode::BT4);
 		this->hci_le_set_extended_advertising_parameters(BluetoothMode::BT4, 300);
+		this->hci_le_set_advertising_set_random_address(BluetoothMode::BT4);
 	}
 
 	// BT5
 	if (_settings.use_bt5) {
-		this->hci_le_set_advertising_set_random_address(BluetoothMode::BT5);
 		this->hci_le_set_extended_advertising_parameters(BluetoothMode::BT5, 300);
+		this->hci_le_set_advertising_set_random_address(BluetoothMode::BT5);
 	}
 
 	this->hci_le_set_extended_advertising_enable();
