@@ -84,7 +84,6 @@ void Transmitter::run_state_machine()
 			params::load();
 		}
 
-		LOG("Sending BT5 message pack");
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
 		struct ODID_UAS_Data uasData = {};

@@ -26,6 +26,7 @@ Bluetooth::Bluetooth(const Settings& settings)
 void Bluetooth::stop()
 {
 	// TODO:
+	hci_stop_transmit();
 }
 
 bool Bluetooth::initialize()
