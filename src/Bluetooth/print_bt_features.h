@@ -4,6 +4,6 @@
 
 #include <inttypes.h>
 
-void print_bt_le_features(const uint8_t *features_array);
+void print_bt_le_features(const uint8_t* data, int size);
 
 #endif //_PRINT_FEATURES_H_

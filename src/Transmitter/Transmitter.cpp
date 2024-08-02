@@ -29,7 +29,10 @@ bool Transmitter::start()
 {
 	//// Setup Bluetooth
 	_bluetooth = std::make_shared<bt::Bluetooth>(_bluetooth_settings);
-	_bluetooth->initialize();
+
+	if (!_bluetooth->initialize()) {
+		return false;
+	}
 
 	//// Setup MAVLink
 	_mavlink = std::make_shared<mavlink::Mavlink>(_mavlink_settings);
@@ -73,6 +76,8 @@ void Transmitter::stop()
 
 void Transmitter::run_state_machine()
 {
+	int msg_counter = 0;
+
 	while (!_should_exit) {
 
 		if (params::updated()) {
@@ -91,11 +96,10 @@ void Transmitter::run_state_machine()
 		LOG("creating message pack");
 		create_message_pack(&uasData, &encoded);
 
-		int msg_counter = 1;
-		uint8_t set = 1; // set=1 BT5
-
 		LOG("sending message pack");
-		_bluetooth->hci_le_set_extended_advertising_data_pack(set, &encoded, msg_counter);
+
+		// Only send BT5 (for now)
+		_bluetooth->hci_le_set_extended_advertising_data(bt::BluetoothMode::BT5, &encoded, ++msg_counter);
 	}
 }
 

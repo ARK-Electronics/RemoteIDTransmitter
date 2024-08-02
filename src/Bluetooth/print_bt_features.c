@@ -91,18 +91,21 @@ static inline uint64_t print_bitfield(int indent, uint64_t val, const struct bit
     return mask;
 }
 
-void print_bt_le_features(const uint8_t *features_array)
+void print_bt_le_features(const uint8_t* data, int size)
 {
     uint64_t mask, features = 0;
     char str[41];
 
-    for (int i = 0; i < 8; i++) {
-        sprintf(str + (i * 5), " 0x%2.2x", features_array[i]);
-        features |= ((uint64_t) features_array[i]) << (i * 8);
+    for (int i = 0; i < size; i++) {
+        sprintf(str + (i * 5), " 0x%2.2x", data[i]);
+        features |= ((uint64_t) data[i]) << (i * 8);
     }
     print_field("Features:%s", str);
 
     mask = print_bitfield(2, features, features_le);
-    if (mask)
+    if (mask) {
         print_text(COLOR_UNKNOWN_FEATURE_BIT, "  Unknown features (0x%16.16" PRIx64 ")", mask);
+    }
+
+    fflush(stdout);
 }
