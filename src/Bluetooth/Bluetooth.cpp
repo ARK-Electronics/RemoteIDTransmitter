@@ -205,19 +205,24 @@ void Bluetooth::hci_le_set_extended_advertising_enable()
 			  0x00, 0x00
 			}; // Max_Extended_Advertising_Events[i]: 0 = No maximum number of advertising events
 
+	int length = 0;
+
 	if (_settings.use_bt4 && _settings.use_bt5) {
 		buf[1] = 2;
 		buf[2] = BT4_SET;
 		buf[3] = BT5_SET;
+		length = sizeof(buf);
 
 	} else if (_settings.use_bt4) {
 		buf[2] = BT4_SET;
+		length = 5;
 
 	} else if (_settings.use_bt5) {
 		buf[2] = BT5_SET;
+		length = 5;
 	}
 
-	if (send_command(ogf, ocf, buf, sizeof(buf))) {
+	if (send_command(ogf, ocf, buf, length)) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
 		uint8_t status = {};
 		CommandResponse response = read_command_response(opcode, &status, sizeof(status));
