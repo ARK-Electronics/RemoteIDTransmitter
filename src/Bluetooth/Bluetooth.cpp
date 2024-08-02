@@ -47,12 +47,16 @@ bool Bluetooth::initialize()
 	_max_adv_data_len = this->hci_le_read_maximum_advertising_data_length();
 
 	// BT4
-	this->hci_le_set_advertising_set_random_address(BluetoothMode::BT4);
-	this->hci_le_set_extended_advertising_parameters(BluetoothMode::BT4, 300);
+	if (_settings.use_bt4) {
+		this->hci_le_set_advertising_set_random_address(BluetoothMode::BT4);
+		this->hci_le_set_extended_advertising_parameters(BluetoothMode::BT4, 300);
+	}
 
 	// BT5
-	this->hci_le_set_advertising_set_random_address(BluetoothMode::BT5);
-	this->hci_le_set_extended_advertising_parameters(BluetoothMode::BT5, 300);
+	if (_settings.use_bt5) {
+		this->hci_le_set_advertising_set_random_address(BluetoothMode::BT5);
+		this->hci_le_set_extended_advertising_parameters(BluetoothMode::BT5, 300);
+	}
 
 	this->hci_le_set_extended_advertising_enable();
 	return true;
