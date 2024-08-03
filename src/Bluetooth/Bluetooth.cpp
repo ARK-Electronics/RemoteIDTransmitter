@@ -1,20 +1,17 @@
 #include "Bluetooth.hpp"
+#include "print_bt_features.h"
+
 #include <global_include.hpp>
 
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
-
 #include <unistd.h>
 
-extern "C" {
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
-
-#include "print_bt_features.h"
-}
 
 namespace bt
 {
@@ -42,25 +39,8 @@ bool Bluetooth::initialize()
 	}
 
 	hci_reset();
-
 	le_read_local_supported_features();
 	hci_read_local_supported_features();
-
-	// TESTING!!!
-	write_le_host_support();
-	read_le_host_support();
-
-	// exit(0);
-
-	// BT5
-	// if (_settings.use_bt5) {
-	// 	enable_le_extended_advertising();
-	// }
-
-	// // BT Legacy
-	// if (_settings.use_btl) {
-	// 	enable_legacy_advertising();
-	// }
 
 	return true;
 }
@@ -163,19 +143,19 @@ void Bluetooth::read_le_host_support()
 	uint8_t ogf = OGF_HOST_CTL;
 	uint16_t ocf = 0x006C; // Read LE Host Support
 
-	uint8_t data[3] = {};
+	uint8_t resp[3] = {};
 
 	if (send_command(ogf, ocf, nullptr, 0)) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
-		uint8_t status = wait_for_command_acknowledged(opcode, 100, data, sizeof(data));
+		uint8_t status = wait_for_command_acknowledged(opcode, 100, resp, sizeof(resp));
 
 		if (status) {
 			LOG(RED_TEXT "Failed to read le host support: error 0x%x" NORMAL_TEXT, status);
 		}
 	}
 
-	LOG("LE_Supported_Host: %u", data[1]);
-	LOG("Simultaneous_LE_Host: %u", data[2]);
+	LOG("LE_Supported_Host: %u", resp[1]);
+	LOG("Simultaneous_LE_Host: %u", resp[2]);
 }
 
 void Bluetooth::write_le_host_support()
@@ -184,12 +164,12 @@ void Bluetooth::write_le_host_support()
 	uint8_t ogf = OGF_HOST_CTL;
 	uint16_t ocf = 0x006D; // Write LE Host Support
 
-	uint8_t data[2] = {};
+	uint8_t buf[2] = {};
 
-	data[0] = 1; // LE_Supported_Host
-	data[1] = 1; // Simultaneous_LE_Host
+	buf[0] = 1; // LE_Supported_Host
+	buf[1] = 1; // Simultaneous_LE_Host
 
-	if (send_command(ogf, ocf, data, sizeof(data))) {
+	if (send_command(ogf, ocf, buf, sizeof(buf))) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
 		uint8_t status = wait_for_command_acknowledged(opcode, 100);
 
@@ -203,18 +183,18 @@ uint16_t Bluetooth::le_read_maximum_advertising_data_length()
 {
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x003A;
-	uint8_t data[3] = {};
+	uint8_t resp[3] = {};
 
 	if (send_command(ogf, ocf, nullptr, 0)) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
-		uint8_t status = wait_for_command_acknowledged(opcode, 100, data, sizeof(data));
+		uint8_t status = wait_for_command_acknowledged(opcode, 100, resp, sizeof(resp));
 
 		if (status) {
 			LOG(RED_TEXT "Failed to read maximum advertising length: error 0x%x" NORMAL_TEXT, status);
 		}
 	}
 
-	return uint16_t(data[2] << 8) + uint16_t(data[1]);
+	return uint16_t(resp[2] << 8) + uint16_t(resp[1]);
 }
 
 void Bluetooth::le_set_extended_advertising_disable()
@@ -222,8 +202,8 @@ void Bluetooth::le_set_extended_advertising_disable()
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0039;      // LE Set Extended Advertising Enable
 	uint8_t buf[] = {
-		0x00,   // Enable: 0 = Advertising is disabled
-		0x00 	// Number_of_Sets: 0 = Disable all advertising sets
+		0x00, // Enable: 0 = Advertising is disabled
+		0x00 // Number_of_Sets: 0 = Disable all advertising sets
 	};
 
 	if (send_command(ogf, ocf, buf, sizeof(buf))) {
@@ -236,7 +216,6 @@ void Bluetooth::le_set_extended_advertising_disable()
 	}
 }
 
-// Max two advertising sets is supported by this function currently
 void Bluetooth::le_set_extended_advertising_enable()
 {
 	LOG("Setting extended advertising enable");
@@ -282,8 +261,9 @@ void Bluetooth::le_set_advertising_set_random_address()
 
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0035; // LE Set Advertising Set Random Address
-	uint8_t buf[_mac.size() + 1] = {};   // Advertising_Handle: Used to identify an advertising set
+	uint8_t buf[_mac.size() + 1] = {};
 
+	buf[0] = 0; // Advertising_Handle: Used to identify an advertising set
 	memcpy(&buf[1], _mac.data(), _mac.size());
 
 	if (send_command(ogf, ocf, buf, sizeof(buf))) {
@@ -305,12 +285,12 @@ void Bluetooth::le_read_local_supported_features()
 
 	if (send_command(ogf, ocf, nullptr, 0)) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
-		uint8_t data[9] = {};
-		uint8_t status = wait_for_command_acknowledged(opcode, 100, data, sizeof(data));
+		uint8_t resp[9] = {};
+		uint8_t status = wait_for_command_acknowledged(opcode, 100, resp, sizeof(resp));
 
 		if (status == 0) {
 			LOG("Supported LE Bluetooth features:");
-			print_bt_le_features(&data[1], 8);
+			print_bt_le_features(&resp[1], 8);
 
 		} else {
 			LOG(RED_TEXT "Failed to set read le local supported features: error 0x%x" NORMAL_TEXT, status);
@@ -327,12 +307,12 @@ void Bluetooth::hci_read_local_supported_features()
 
 	if (send_command(ogf, ocf, nullptr, 0)) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
-		uint8_t data[9] = {};
-		uint8_t status = wait_for_command_acknowledged(opcode, 100, data, sizeof(data));
+		uint8_t resp[9] = {};
+		uint8_t status = wait_for_command_acknowledged(opcode, 100, resp, sizeof(resp));
 
 		if (status == 0) {
 			LOG("Supported HCI Bluetooth features:");
-			print_bt_hci_features(&data[1], 8);
+			print_bt_hci_features(&resp[1], 8);
 
 		} else {
 			LOG(RED_TEXT "Failed to set read hci local supported features: error 0x%x" NORMAL_TEXT, status);
@@ -359,8 +339,8 @@ void Bluetooth::le_set_extended_advertising_parameters(int interval_ms)
 			  0x00,       // Secondary_Advertising_Max_Skip: 0 = AUX_ADV_IND shall be sent prior to the next advertising event
 			  0x01,       // Secondary_Advertising_PHY: 1 = Secondary advertisement PHY is LE 1M
 			  0x00,       // Advertising_SID: 0 = Value of the Advertising SID subfield in the ADI field of the PDU
-			  0x00
-			};     // Scan_Request_Notification_Enable: 0 = Scan request notifications disabled
+			  0x00        // Scan_Request_Notification_Enable: 0 = Scan request notifications disabled
+			};
 
 	interval_ms = std::min(std::max((1000 * interval_ms) / 625, 0x000020), 0xFFFFFF);
 	buf[3] = buf[6] = interval_ms & 0xFF;
@@ -373,14 +353,14 @@ void Bluetooth::le_set_extended_advertising_parameters(int interval_ms)
 
 	if (send_command(ogf, ocf, buf, sizeof(buf))) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
-		uint8_t data[2] = {};
-		uint8_t status = wait_for_command_acknowledged(opcode, 100, data, sizeof(data));
+		uint8_t resp[2] = {};
+		uint8_t status = wait_for_command_acknowledged(opcode, 100, resp, sizeof(resp));
 
 		if (status) {
 			LOG(RED_TEXT "Failed to set extended advertising parameters: error 0x%x" NORMAL_TEXT, status);
 
 		} else {
-			LOG("Selected TX Power: %u dbm", data[1]);
+			LOG("Selected TX Power: %u dbm", resp[1]);
 			// Setting the extended advertising parameters for BT4 also causes the controller to set
 			// extended advertising data so we must read that response here now as well
 			wait_for_command_acknowledged(htobs(cmd_opcode_pack(OGF_LE_CTL, 0x0037)), 100);
@@ -394,29 +374,24 @@ void Bluetooth::hci_le_set_extended_advertising_data(const ODID_Message_encoded*
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0037;// LE Set Extended Advertising Data
 	uint8_t buf[4 + adv_data_hdr_size + ODID_MESSAGE_SIZE] = {
-		0x00,   // Advertising_Handle: Used to identify an advertising set
-		0x03,   // Operation: 3 = Complete extended advertising data
-		0x01,   // Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
-		0x1F,   // Advertising_Data_Length: The number of octets in the Advertising Data parameter
+		0x00,   	// Advertising_Handle: Used to identify an advertising set
+		0x03,   	// Operation: 3 = Complete extended advertising data
+		0x01,   	// Fragment_Preference: 1 = The Controller should not fragment or should minimize fragmentation of Host advertising data
+		0x00,   	// Advertising_Data_Length: The number of octets in the Advertising Data parameter
 		// BEGIN ODID
-		// AD Info
-		0x1E,   // The length of the following data field
-		0x16,   // 16 = GAP AD Type = "Service Data - 16-bit UUID"
+		0x00,   	// The length of the following data field
+		0x16,   	// 16 = GAP AD Type = "Service Data - 16-bit UUID"
 		0xFA, 0xFF, // 0xFFFA = ASTM International, ASTM Remote ID
-		// App code
-		0x0D,   // 0x0D = AD Application Code within the ASTM address space = Open Drone ID
-		// Msg counter
-		0x00   // xx = 8-bit message counter starting at 0x00 and wrapping around at 0xFF
+		0x0D,   	// 0x0D = AD Application Code within the ASTM address space = Open Drone ID
+		0x00   		// xx = 8-bit message counter starting at 0x00 and wrapping around at 0xFF
 	};
 
 	buf[9] = count;
-
-	buf[3] = ODID_MESSAGE_SIZE + adv_data_hdr_size;
-	buf[4] = ODID_MESSAGE_SIZE + adv_data_hdr_size - 1;
+	buf[3] = ODID_MESSAGE_SIZE + adv_data_hdr_size; // Advertising_Data_Length
+	buf[4] = ODID_MESSAGE_SIZE + adv_data_hdr_size - 1; // AD Info -- The length of the following data
 
 	memcpy(&buf[10], (uint8_t*)data, ODID_MESSAGE_SIZE);
 
-	// Send off the data
 	if (send_command(ogf, ocf, buf, sizeof(buf))) {
 		uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
 		uint8_t status = wait_for_command_acknowledged(opcode, 100);

@@ -8,13 +8,11 @@
 
 #include <unistd.h>
 
-extern "C" {
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 
 #include "print_bt_features.h"
-}
 
 namespace bt
 {
@@ -117,7 +115,7 @@ void Bluetooth::legacy_set_advertising_data(const ODID_Message_encoded* data, ui
 	LOG("Setting legacy advertising data");
 
 	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
-	uint16_t ocf = OCF_LE_SET_ADVERTISING_DATA;
+	uint16_t ocf = OCF_LE_SET_ADVERTISING_DATA; // LE Set Advertising Data
 	uint8_t buf[7 + ODID_MESSAGE_SIZE] = {
 		0x1F, // Advertising_Data_Length: The number of significant octets in the Advertising_Data.
 		0x1E, // Length of the service data element

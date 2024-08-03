@@ -1,8 +1,6 @@
 #pragma once
 
-extern "C" {
 #include <opendroneid.h>
-}
 
 #include <string>
 
@@ -44,7 +42,6 @@ private:
 
 	void read_le_host_support();
 	void write_le_host_support();
-
 
 	int hci_open();
 	void hci_reset();
