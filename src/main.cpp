@@ -48,8 +48,8 @@ int main(int argc, const char** argv)
 
 	bt::Settings bt_settings = {
 		.hci_device_name = "hci0",
-		.use_bt4 = false,
 		.use_bt5 = true,
+		.use_btl = true,
 	};
 
 	txr::Settings settings = {

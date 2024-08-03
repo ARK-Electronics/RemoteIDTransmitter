@@ -63,6 +63,7 @@ include_directories(
 add_executable(rid-transmitter
     libraries/opendroneid-core-c/libopendroneid/opendroneid.c
     src/Bluetooth/Bluetooth.cpp
+    src/Bluetooth/BluetoothLegacy.cpp
     src/Bluetooth/print_bt_features.c
     src/Transmitter/Transmitter.cpp
     src/Transmitter/parameters/parameters.cpp

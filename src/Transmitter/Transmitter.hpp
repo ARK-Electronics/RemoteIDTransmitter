@@ -53,8 +53,7 @@ private:
 	mavlink::ConfigurationSettings _mavlink_settings {};
 	std::shared_ptr<mavlink::Mavlink> _mavlink {};
 
-
-	void send_single_messages(struct ODID_UAS_Data* uasData, int* count);
+	void send_single_messages(struct ODID_UAS_Data* uasData, int* count, bool legacy);
 
 	void create_message_pack(struct ODID_UAS_Data* uasData, struct ODID_MessagePack_encoded* pack_enc);
 

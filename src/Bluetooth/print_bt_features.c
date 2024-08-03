@@ -49,6 +49,75 @@ static const struct bitfield_data features_le[] = {
         { }
 };
 
+static const struct bitfield_data features_hci[] = {
+    {  0, "3 slot packets"                           },
+    {  1, "5 slot packets"                           },
+    {  2, "Encryption"                               },
+    {  3, "Slot offset"                              },
+    {  4, "Timing accuracy"                          },
+    {  5, "Role switch"                              },
+    {  6, "Hold mode"                                },
+    {  7, "Sniff mode"                               },
+    {  8, "Previously used"                          },
+    {  9, "Power control requests"                   },
+    { 10, "Channel quality driven data rate (CQDDR)" },
+    { 11, "SCO link"                                 },
+    { 12, "HV2 packets"                              },
+    { 13, "HV3 packets"                              },
+    { 14, "μ-law log synchronous data"               },
+    { 15, "A-law log synchronous data"               },
+    { 16, "CVSD synchronous data"                    },
+    { 17, "Paging parameter negotiation"             },
+    { 18, "Power control"                            },
+    { 19, "Transparent synchronous data"             },
+    { 20, "Flow control lag (least significant bit)" },
+    { 21, "Flow control lag (middle bit)"            },
+    { 22, "Flow control lag (most significant bit)"  },
+    { 23, "Broadcast Encryption"                     },
+    { 24, "Reserved for future use"                  },
+    { 25, "Enhanced Data Rate ACL 2 Mb/s mode"       },
+    { 26, "Enhanced Data Rate ACL 3 Mb/s mode"       },
+    { 27, "Enhanced inquiry scan"                    },
+    { 28, "Interlaced inquiry scan"                  },
+    { 29, "Interlaced page scan"                     },
+    { 30, "RSSI with inquiry results"                },
+    { 31, "Extended SCO link (EV3 packets)"          },
+    { 32, "EV4 packets"                              },
+    { 33, "EV5 packets"                              },
+    { 34, "Reserved for future use"                  },
+    { 35, "AFH capable slave"                        },
+    { 36, "AFH classification slave"                 },
+    { 37, "BR/EDR Not Supported"                     },
+    { 38, "LE Supported (Controller)"                },
+    { 39, "3-slot Enhanced Data Rate ACL packets"    },
+    { 40, "5-slot Enhanced Data Rate ACL packets"    },
+    { 41, "Sniff subrating"                          },
+    { 42, "Pause encryption"                         },
+    { 43, "AFH capable master"                       },
+    { 44, "AFH classification master"                },
+    { 45, "Enhanced Data Rate eSCO 2 Mb/s mode"      },
+    { 46, "Enhanced Data Rate eSCO 3 Mb/s mode"      },
+    { 47, "3-slot Enhanced Data Rate eSCO packets"   },
+    { 48, "Extended Inquiry Response"                },
+    { 49, "Simultaneous LE and BR/EDR to Same Device Capable (Controller)" },
+    { 50, "Reserved for future use"                  },
+    { 51, "Secure Simple Pairing (Controller Support)" },
+    { 52, "Encapsulated PDU"                         },
+    { 53, "Erroneous Data Reporting"                 },
+    { 54, "Non-flushable Packet Boundary Flag"       },
+    { 55, "Reserved for future use"                  },
+    { 56, "HCI_Link_Supervision_Timeout_Changed event" },
+    { 57, "Variable Inquiry TX Power Level"          },
+    { 58, "Enhanced Power Control"                   },
+    { 63, "Extended features"                   },
+    { 64, "Secure Simple Pairing (Host Support)"                   },
+    { 65, "LE Supported (Host)"                   },
+    { 66, "Simultaneous LE and BR/EDR to Same Device Capable (Host)"                   },
+    { 67, "Secure Connections (Host Support)"                   },
+    { }
+};
+
+
 #define COLOR_OFF	"\x1B[0m"
 #define COLOR_WHITE_BG	"\x1B[0;47;30m"
 #define COLOR_UNKNOWN_FEATURE_BIT	COLOR_WHITE_BG
@@ -102,7 +171,26 @@ void print_bt_le_features(const uint8_t* data, int size)
     }
     print_field("Features:%s", str);
 
-    mask = print_bitfield(2, features, features_le);
+    mask = print_bitfield(1, features, features_le);
+    if (mask) {
+        print_text(COLOR_UNKNOWN_FEATURE_BIT, "  Unknown features (0x%16.16" PRIx64 ")", mask);
+    }
+
+    fflush(stdout);
+}
+
+void print_bt_hci_features(const uint8_t* data, int size)
+{
+    uint64_t mask, features = 0;
+    char str[41];
+
+    for (int i = 0; i < size; i++) {
+        sprintf(str + (i * 5), " 0x%2.2x", data[i]);
+        features |= ((uint64_t) data[i]) << (i * 8);
+    }
+    print_field("Features:%s", str);
+
+    mask = print_bitfield(1, features, features_hci);
     if (mask) {
         print_text(COLOR_UNKNOWN_FEATURE_BIT, "  Unknown features (0x%16.16" PRIx64 ")", mask);
     }
