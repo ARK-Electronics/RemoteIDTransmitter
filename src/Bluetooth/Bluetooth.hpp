@@ -1,8 +1,6 @@
 #pragma once
 
-extern "C" {
 #include <opendroneid.h>
-}
 
 #include <string>
 
@@ -11,50 +9,89 @@ namespace bt
 
 struct Settings {
 	std::string hci_device_name;
-	bool use_bt4 {};
 	bool use_bt5 {};
-	uint8_t bt4_set {};
-	uint8_t bt5_set {};
+	bool use_btl {};
 };
+
+static constexpr uint8_t BT5_SET = 0;
+static constexpr uint8_t BT4_SET = 1;
 
 class Bluetooth
 {
 public:
 	Bluetooth(const Settings& settings);
 
-	void initialize();
+	bool initialize();
 
 	void stop();
 
-	void hci_le_set_extended_advertising_data_pack(uint8_t set, const struct ODID_MessagePack_encoded* pack_enc, uint8_t msg_counter);
+	// BT Legacy
+	void legacy_set_advertising_data(const ODID_Message_encoded* data, uint8_t count);
+	// BT LE
+	void hci_le_set_extended_advertising_data(const ODID_Message_encoded* data, uint8_t count);
+
+	void enable_legacy_advertising();
+	void enable_le_extended_advertising();
+
+	void disable_legacy_advertising();
+	void disable_le_extended_advertising();
 
 private:
 
 	std::string generate_random_mac_address();
 
-	// Returns device descriptor
+	void read_le_host_support();
+	void write_le_host_support();
+
 	int hci_open();
 	void hci_reset();
-	void hci_stop_transmit();
 
-	bool send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, int length);
+	bool send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, uint8_t length);
 
-	// void hci_le_set_extended_advertising_data(uint8_t set, const union ODID_Message_encoded* encoded, uint8_t msg_counter);
+	// Returns status code
+	uint8_t wait_for_command_acknowledged(uint16_t opcode, uint64_t timeout_ms, uint8_t* response_data = nullptr, uint8_t response_size = 0);
 
-	void hci_le_set_advertising_disable();
-	void hci_le_set_extended_advertising_disable();
-	void hci_le_remove_advertising_set(uint8_t set);
-	void hci_le_read_local_supported_features();
+	// Returns bytes read
+	enum class CommandResponse {
+		Error,
+		NoData,
+		MissingData,
+		InvalidPacketType,
+		InvalidOpCode,
+		Success,
+	};
+	CommandResponse read_command_response(uint16_t opcode, uint8_t* response, int response_size);
 
-	void hci_le_set_extended_advertising_parameters(uint8_t set, int interval_ms, bool long_range);
-	void hci_le_set_advertising_set_random_address(uint8_t set);
-	void hci_le_set_extended_advertising_enable();
+	// BT5
+	uint16_t le_read_maximum_advertising_data_length();
+
+	void le_set_extended_advertising_enable();
+	void le_set_extended_advertising_disable();
+	void le_read_local_supported_features();
+
+	void hci_read_local_supported_features();
+
+	void le_set_extended_advertising_parameters(int interval_ms);
+	void le_set_advertising_set_random_address();
+	void le_remove_advertising_set();
+
+	// BT Legacy
+	// -- set params
+	// -- set random address
+	// -- enable adv
+	// -- send data
+	void legacy_set_advertising_parameters(uint16_t interval_ms);
+	void legacy_set_random_address();
+	void legacy_set_advertising_enable();
+	void legacy_set_advertising_disable();
 
 private:
 	Settings _settings {};
-	int _dd = 0;
+	int _device = 0;
 
 	std::string _mac;
+
+	uint16_t _max_adv_data_len = 0;
 
 };
 

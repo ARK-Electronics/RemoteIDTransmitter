@@ -5,9 +5,15 @@
 namespace txr
 {
 
+#if defined(DOCKER_BUILD)
+static char VERSION_FILE_NAME[] = "/data/version.txt";
+#else
+static char VERSION_FILE_NAME[] = "/tmp/rid-transmitter/version.txt";
+#endif
+
 Transmitter::Transmitter(const txr::Settings& settings)
-	: _mavlink_settings(settings.mavlink_settings)
-	, _bluetooth_settings(settings.bluetooth_settings)
+	: _bluetooth_settings(settings.bluetooth_settings)
+	, _mavlink_settings(settings.mavlink_settings)
 {
 	// If version has changed reset parameters to default
 	std::string version(APP_GIT_VERSION);
@@ -29,7 +35,10 @@ bool Transmitter::start()
 {
 	//// Setup Bluetooth
 	_bluetooth = std::make_shared<bt::Bluetooth>(_bluetooth_settings);
-	_bluetooth->initialize();
+
+	if (!_bluetooth->initialize()) {
+		return false;
+	}
 
 	//// Setup MAVLink
 	_mavlink = std::make_shared<mavlink::Mavlink>(_mavlink_settings);
@@ -73,29 +82,63 @@ void Transmitter::stop()
 
 void Transmitter::run_state_machine()
 {
+	int msg_counter = 0;
+	uint64_t loop_rate_ms = 100;
+	bool send_legacy_data_toggle = false;
+
 	while (!_should_exit) {
+
+		send_legacy_data_toggle = !send_legacy_data_toggle;
+
+		if (send_legacy_data_toggle) {
+			LOG("Toggling to legacy");
+			_bluetooth->disable_le_extended_advertising();
+			_bluetooth->enable_legacy_advertising();
+
+		} else {
+			LOG("Toggling to LE");
+			_bluetooth->disable_legacy_advertising();;
+			_bluetooth->enable_le_extended_advertising();
+		}
+
+		uint64_t start_time = millis();
 
 		if (params::updated()) {
 			params::load();
 		}
 
-		LOG("Sending BT5 message pack");
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
 		struct ODID_UAS_Data uasData = {};
-		struct ODID_MessagePack_encoded encoded = {};
 
 		// Testing
 		uasData.BasicID[0].UAType = ODID_UATYPE_CAPTIVE_BALLOON;
 
-		LOG("creating message pack");
-		create_message_pack(&uasData, &encoded);
 
-		int msg_counter = 1;
-		uint8_t set = 1; // set=1 BT5
+		send_single_messages(&uasData, &msg_counter, send_legacy_data_toggle);
 
-		LOG("sending message pack");
-		_bluetooth->hci_le_set_extended_advertising_data_pack(set, &encoded, msg_counter);
+		uint64_t now = millis();
+
+		uint64_t elapsed = now - start_time;
+
+		uint64_t sleep_time = elapsed > loop_rate_ms ? 0 : loop_rate_ms - elapsed;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
+	}
+}
+
+void Transmitter::send_single_messages(struct ODID_UAS_Data* uasData, int* count, bool legacy)
+{
+	union ODID_Message_encoded encoded;
+	memset(&encoded, 0, sizeof(union ODID_Message_encoded));
+
+	encodeBasicIDMessage((ODID_BasicID_encoded*) &encoded, &uasData->BasicID[0]);
+
+	if (legacy) {
+		// Set BT Legacy advertising data
+		_bluetooth->legacy_set_advertising_data(&encoded, ++(*count));
+
+	} else {
+		// Send LE Extended advertising data
+		_bluetooth->hci_le_set_extended_advertising_data(&encoded, ++(*count));
 	}
 }
 
