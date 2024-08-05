@@ -14,12 +14,6 @@
 namespace txr
 {
 
-#if defined(DOCKER_BUILD)
-static char VERSION_FILE_NAME[] = "/data/version.txt";
-#else
-static char VERSION_FILE_NAME[] = "/tmp/rid-transmitter/version.txt";
-#endif
-
 struct Settings {
 	mavlink::ConfigurationSettings mavlink_settings {};
 	bt::Settings bluetooth_settings {};

@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -14,7 +13,7 @@ set(Yellow      "${Esc}[33m")
 set(Blue        "${Esc}[34m")
 set(BoldGreen   "${Esc}[1;32m")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-address-of-packed-member")
 
 ##### Add libraries
 add_subdirectory(libraries)

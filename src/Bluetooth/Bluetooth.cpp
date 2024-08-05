@@ -405,8 +405,6 @@ void Bluetooth::hci_le_set_extended_advertising_data(const ODID_Message_encoded*
 uint8_t Bluetooth::wait_for_command_acknowledged(uint16_t opcode, uint64_t timeout_ms, uint8_t* response_data, uint8_t response_size)
 {
 	uint8_t status = {};
-	CommandResponse response = {};
-
 	uint64_t start_time = millis();
 	bool exit_loop = false;
 
@@ -537,8 +535,6 @@ Bluetooth::CommandResponse Bluetooth::read_command_response(uint16_t opcode, uin
 
 bool Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, uint8_t length)
 {
-	uint16_t opcode = htobs(cmd_opcode_pack(ogf, ocf));
-
 	if (hci_send_cmd(_device, ogf, ocf, length, data) < 0) {
 		LOG("send_command failed (did you use sudo?");
 		return false;

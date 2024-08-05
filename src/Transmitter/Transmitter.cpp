@@ -5,9 +5,15 @@
 namespace txr
 {
 
+#if defined(DOCKER_BUILD)
+static char VERSION_FILE_NAME[] = "/data/version.txt";
+#else
+static char VERSION_FILE_NAME[] = "/tmp/rid-transmitter/version.txt";
+#endif
+
 Transmitter::Transmitter(const txr::Settings& settings)
-	: _mavlink_settings(settings.mavlink_settings)
-	, _bluetooth_settings(settings.bluetooth_settings)
+	: _bluetooth_settings(settings.bluetooth_settings)
+	, _mavlink_settings(settings.mavlink_settings)
 {
 	// If version has changed reset parameters to default
 	std::string version(APP_GIT_VERSION);
