@@ -48,7 +48,8 @@ bool Bluetooth::initialize()
 void Bluetooth::enable_legacy_advertising()
 {
 	LOG("Enabling Legacy advertising");
-	legacy_set_advertising_parameters(300);
+	uint16_t interval_ms = 100;
+	legacy_set_advertising_parameters(interval_ms);
 	legacy_set_random_address();
 	legacy_set_advertising_enable();
 }
@@ -56,7 +57,8 @@ void Bluetooth::enable_legacy_advertising()
 void Bluetooth::enable_le_extended_advertising()
 {
 	LOG("Enabling LE Extended advertising");
-	le_set_extended_advertising_parameters(300);
+	uint16_t interval_ms = 100;
+	le_set_extended_advertising_parameters(interval_ms);
 	le_set_advertising_set_random_address();
 	le_set_extended_advertising_enable();
 }

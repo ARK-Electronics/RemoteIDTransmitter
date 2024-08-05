@@ -83,7 +83,7 @@ void Transmitter::stop()
 void Transmitter::run_state_machine()
 {
 	int msg_counter = 0;
-	uint64_t loop_rate_ms = 100;
+	uint64_t loop_rate_ms = 200;
 	bool send_legacy_data_toggle = false;
 
 	while (!_should_exit) {
