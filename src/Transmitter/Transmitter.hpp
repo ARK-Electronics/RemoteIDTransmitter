@@ -7,6 +7,7 @@
 #include <ThreadSafeQueue.hpp>
 
 #include <memory>
+#include <mutex>
 #include <functional>
 #include <unordered_map>
 #include <thread>
@@ -47,9 +48,24 @@ private:
 	mavlink::ConfigurationSettings _mavlink_settings {};
 	std::shared_ptr<mavlink::Mavlink> _mavlink {};
 
-	void send_single_messages(struct ODID_UAS_Data* uasData, int* count, bool legacy);
+	// Mavlink message data
+	std::mutex _basic_id_mutex;
+	std::mutex _location_mutex;
+	std::mutex _system_mutex;
+	mavlink_open_drone_id_basic_id_t _basic_id_msg {};
+	mavlink_open_drone_id_location_t _location_msg {};
+	mavlink_open_drone_id_system_t _system_msg {};
 
-	void create_message_pack(struct ODID_UAS_Data* uasData, struct ODID_MessagePack_encoded* pack_enc);
+	// Each message has a unique counter
+	int _basic_msg_counter {};
+	int _location_msg_counter {};
+	int _system_msg_counter {};
+
+	// Toggles between legacy and extended advertisements
+	bool _toggle_legacy {};
+
+	// Sends the Basic ID, Location/Vector, and System messages
+	void send_single_messages(struct ODID_UAS_Data* data);
 
 	void set_sw_version(const std::string& version);
 	const std::string get_sw_version();

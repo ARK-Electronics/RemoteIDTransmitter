@@ -47,8 +47,8 @@ bool Bluetooth::initialize()
 
 void Bluetooth::enable_legacy_advertising()
 {
-	LOG("Enabling Legacy advertising");
-	uint16_t interval_ms = 100;
+	// LOG("Enabling Legacy advertising");
+	uint16_t interval_ms = 20;
 	legacy_set_advertising_parameters(interval_ms);
 	legacy_set_random_address();
 	legacy_set_advertising_enable();
@@ -56,8 +56,8 @@ void Bluetooth::enable_legacy_advertising()
 
 void Bluetooth::enable_le_extended_advertising()
 {
-	LOG("Enabling LE Extended advertising");
-	uint16_t interval_ms = 100;
+	// LOG("Enabling LE Extended advertising");
+	uint16_t interval_ms = 20;
 	le_set_extended_advertising_parameters(interval_ms);
 	le_set_advertising_set_random_address();
 	le_set_extended_advertising_enable();
@@ -125,7 +125,7 @@ int Bluetooth::hci_open()
 
 void Bluetooth::hci_reset()
 {
-	LOG("Resetting");
+	// LOG("Resetting");
 	uint8_t ogf = OGF_HOST_CTL;
 	uint16_t ocf = 0x0003;
 
@@ -220,7 +220,7 @@ void Bluetooth::le_set_extended_advertising_disable()
 
 void Bluetooth::le_set_extended_advertising_enable()
 {
-	LOG("Setting extended advertising enable");
+	// LOG("Setting extended advertising enable");
 
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0039; // LE Set Extended Advertising Enable
@@ -259,7 +259,7 @@ void Bluetooth::le_remove_advertising_set()
 
 void Bluetooth::le_set_advertising_set_random_address()
 {
-	LOG("Setting LE random address");
+	// LOG("Setting LE random address");
 
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0035; // LE Set Advertising Set Random Address
@@ -324,7 +324,7 @@ void Bluetooth::hci_read_local_supported_features()
 
 void Bluetooth::le_set_extended_advertising_parameters(int interval_ms)
 {
-	LOG("Setting extended advertising parameters");
+	// LOG("Setting extended advertising parameters");
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0036; // LE Set Extended Advertising Parameters
 	uint8_t buf[] = { 0x00, // Advertising_Handle: Used to identify an advertising set
@@ -362,7 +362,7 @@ void Bluetooth::le_set_extended_advertising_parameters(int interval_ms)
 			LOG(RED_TEXT "Failed to set extended advertising parameters: error 0x%x" NORMAL_TEXT, status);
 
 		} else {
-			LOG("Selected TX Power: %u dbm", resp[1]);
+			// LOG("Selected TX Power: %u dbm", resp[1]);
 			// Setting the extended advertising parameters for BT4 also causes the controller to set
 			// extended advertising data so we must read that response here now as well
 			wait_for_command_acknowledged(htobs(cmd_opcode_pack(OGF_LE_CTL, 0x0037)), 100);
