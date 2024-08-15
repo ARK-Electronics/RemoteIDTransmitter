@@ -49,16 +49,23 @@ bool Transmitter::start()
 		std::bind(&Transmitter::mavlink_param_set_cb, this, std::placeholders::_1)
 	);
 
-	// messages -- all should publish at >= 1_Hz (and not older than 1_s)
-	// OPEN_DRONE_ID_BASIC_ID -- UAS info
-	// OPEN_DRONE_ID_LOCATION -- UAS location
-	// OPEN_DRONE_ID_SYSTEM -- GCS location
-
 	// Subscribe to mavlink OPEN_DRONE_ID_LOCATION
+	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID, [this](const mavlink_message_t& message) {
+		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID: %u / %u", message.sysid, message.compid);
+		std::lock_guard<std::mutex> lock(_basic_id_mutex);
+		mavlink_msg_open_drone_id_basic_id_decode(&message, &_basic_id_msg);
+	});
+
 	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION, [this](const mavlink_message_t& message) {
-		mavlink_open_drone_id_location_t msg;
-		mavlink_msg_open_drone_id_location_decode(&message, &msg);
-		LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION");
+		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION: %u / %u", message.sysid, message.compid);
+		std::lock_guard<std::mutex> lock(_location_mutex);
+		mavlink_msg_open_drone_id_location_decode(&message, &_location_msg);
+	});
+
+	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM, [this](const mavlink_message_t& message) {
+		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM: %u / %u", message.sysid, message.compid);
+		std::lock_guard<std::mutex> lock(_system_mutex);
+		mavlink_msg_open_drone_id_system_decode(&message, &_system_msg);
 	});
 
 	auto result = _mavlink->start();
@@ -82,22 +89,16 @@ void Transmitter::stop()
 
 void Transmitter::run_state_machine()
 {
-	int msg_counter = 0;
-	uint64_t loop_rate_ms = 100;
-	bool send_legacy_data_toggle = false;
+	uint64_t loop_rate_ms = 200;
 
 	while (!_should_exit) {
 
-		send_legacy_data_toggle = !send_legacy_data_toggle;
+		_toggle_legacy = !_toggle_legacy;
 
-		if (send_legacy_data_toggle) {
-			LOG("Toggling to legacy");
-			_bluetooth->disable_le_extended_advertising();
+		if (_toggle_legacy) {
 			_bluetooth->enable_legacy_advertising();
 
 		} else {
-			LOG("Toggling to LE");
-			_bluetooth->disable_legacy_advertising();;
 			_bluetooth->enable_le_extended_advertising();
 		}
 
@@ -107,97 +108,109 @@ void Transmitter::run_state_machine()
 			params::load();
 		}
 
-		struct ODID_UAS_Data uasData = {};
+		// Fill in the data from mavlink messages
+		struct ODID_UAS_Data data = {};
+		// Basic ID
+		{
+			std::lock_guard<std::mutex> lock(_basic_id_mutex);
+			data.BasicID[0].UAType = (ODID_uatype)_basic_id_msg.id_type;
+			data.BasicID[0].IDType = (ODID_idtype_t)_basic_id_msg.ua_type;
+			memcpy(data.BasicID[0].UASID, _basic_id_msg.uas_id, 20);
+		}
+		// Location / Vector
+		{
+			std::lock_guard<std::mutex> lock(_location_mutex);
+			data.Location.Status = (ODID_status_t)_location_msg.status;
+			data.Location.Direction = float(_location_msg.direction) / 100.f;
+			data.Location.SpeedHorizontal = float(_location_msg.speed_horizontal) / 100.f;
+			data.Location.SpeedVertical = float(_location_msg.speed_vertical) / 100.f;
+			data.Location.Latitude = double(_location_msg.latitude) / 1.e7;
+			data.Location.Longitude = double(_location_msg.longitude) / 1.e7;
+			data.Location.AltitudeBaro = _location_msg.altitude_barometric;
+			data.Location.AltitudeGeo = _location_msg.altitude_geodetic;
+			data.Location.HeightType = (ODID_Height_reference)_location_msg.height_reference;
+			data.Location.Height = _location_msg.height;
+			data.Location.HorizAccuracy = (ODID_Horizontal_accuracy_t)_location_msg.horizontal_accuracy;
+			data.Location.VertAccuracy = (ODID_Vertical_accuracy_t)_location_msg.vertical_accuracy;
+			data.Location.BaroAccuracy = (ODID_Vertical_accuracy_t)_location_msg.barometer_accuracy;
+			data.Location.SpeedAccuracy = (ODID_Speed_accuracy_t)_location_msg.speed_accuracy;
+			data.Location.TSAccuracy = (ODID_Timestamp_accuracy_t)_location_msg.timestamp_accuracy;
+			data.Location.TimeStamp = _location_msg.timestamp;
+		}
+		// System
+		{
+			std::lock_guard<std::mutex> lock(_system_mutex);
+			data.System.OperatorLocationType = (ODID_operator_location_type_t)_system_msg.operator_location_type;
+			data.System.ClassificationType = (ODID_classification_type_t)_system_msg.classification_type;
+			data.System.OperatorLatitude = _system_msg.operator_latitude / 1.e7;
+			data.System.OperatorLongitude = _system_msg.operator_longitude / 1.e7;
+			data.System.AreaCount = _system_msg.area_count;
+			data.System.AreaRadius = _system_msg.area_radius;
+			data.System.AreaCeiling = _system_msg.area_ceiling;
+			data.System.AreaFloor = _system_msg.area_floor;
+			data.System.CategoryEU = (ODID_category_EU_t)_system_msg.category_eu;
+			data.System.ClassEU = (ODID_class_EU_t)_system_msg.class_eu;
+			data.System.OperatorAltitudeGeo = _system_msg.operator_altitude_geo;
+			data.System.Timestamp = _system_msg.timestamp;
+		}
 
-		// Testing
-		uasData.BasicID[0].UAType = ODID_UATYPE_CAPTIVE_BALLOON;
+		// Send out the data
+		send_single_messages(&data);
 
+		// Disable when we're done so that we only broadcast a single advertisement
+		if (_toggle_legacy) {
+			_bluetooth->disable_legacy_advertising();
 
-		send_single_messages(&uasData, &msg_counter, send_legacy_data_toggle);
+		} else {
+			_bluetooth->disable_le_extended_advertising();
+		}
 
-		uint64_t now = millis();
-
-		uint64_t elapsed = now - start_time;
-
+		// Reschedule loop at fixed rate
+		uint64_t elapsed = millis() - start_time;
 		uint64_t sleep_time = elapsed > loop_rate_ms ? 0 : loop_rate_ms - elapsed;
-
 		std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
 	}
 }
 
-void Transmitter::send_single_messages(struct ODID_UAS_Data* uasData, int* count, bool legacy)
+void Transmitter::send_single_messages(struct ODID_UAS_Data* data)
 {
-	union ODID_Message_encoded encoded;
-	memset(&encoded, 0, sizeof(union ODID_Message_encoded));
+	union ODID_Message_encoded basic_encoded = {};
+	union ODID_Message_encoded location_encoded = {};
+	union ODID_Message_encoded system_encoded = {};
 
-	encodeBasicIDMessage((ODID_BasicID_encoded*) &encoded, &uasData->BasicID[0]);
+	if (encodeBasicIDMessage((ODID_BasicID_encoded*) &basic_encoded, &data->BasicID[0])) {
+		LOG("failed to encode Basic ID");
+	}
 
-	if (legacy) {
+	if (encodeLocationMessage((ODID_Location_encoded*) &location_encoded, &data->Location)) {
+		LOG("failed to encode Location");
+	}
+
+	if (encodeSystemMessage((ODID_System_encoded*) &system_encoded, &data->System)) {
+		LOG("failed to encode System");
+	}
+
+	// We wait 30ms in between message advertisements since the min advertising interval is 20ms
+	// This ensures that the data is published, any slower and data will get missed.
+	if (_toggle_legacy) {
 		// Set BT Legacy advertising data
-		_bluetooth->legacy_set_advertising_data(&encoded, ++(*count));
+		_bluetooth->legacy_set_advertising_data(&basic_encoded, ++_basic_msg_counter);
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+		_bluetooth->legacy_set_advertising_data(&location_encoded, ++_location_msg_counter);
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+		_bluetooth->legacy_set_advertising_data(&system_encoded, ++_system_msg_counter);
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
 	} else {
 		// Send LE Extended advertising data
-		_bluetooth->hci_le_set_extended_advertising_data(&encoded, ++(*count));
+		_bluetooth->hci_le_set_extended_advertising_data(&basic_encoded, ++_basic_msg_counter);
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+		_bluetooth->hci_le_set_extended_advertising_data(&location_encoded, ++_location_msg_counter);
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+		_bluetooth->hci_le_set_extended_advertising_data(&system_encoded, ++_system_msg_counter);
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 	}
 }
-
-void Transmitter::create_message_pack(struct ODID_UAS_Data* uasData, struct ODID_MessagePack_encoded* pack_enc)
-{
-	union ODID_Message_encoded encoded = { 0 };
-	ODID_MessagePack_data pack_data = { 0 };
-	pack_data.SingleMessageSize = ODID_MESSAGE_SIZE;
-	pack_data.MsgPackSize = 9;
-
-	if (encodeBasicIDMessage((ODID_BasicID_encoded*) &encoded, &uasData->BasicID[0]) != ODID_SUCCESS)
-		printf("Error: Failed to encode Basic ID\n");
-
-	memcpy(&pack_data.Messages[0], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeBasicIDMessage((ODID_BasicID_encoded*) &encoded, &uasData->BasicID[1]) != ODID_SUCCESS)
-		printf("Error: Failed to encode Basic ID\n");
-
-	memcpy(&pack_data.Messages[1], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeLocationMessage((ODID_Location_encoded*) &encoded, &uasData->Location) != ODID_SUCCESS)
-		printf("Error: Failed to encode Location\n");
-
-	memcpy(&pack_data.Messages[2], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeAuthMessage((ODID_Auth_encoded*) &encoded, &uasData->Auth[0]) != ODID_SUCCESS)
-		printf("Error: Failed to encode Auth 0\n");
-
-	memcpy(&pack_data.Messages[3], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeAuthMessage((ODID_Auth_encoded*) &encoded, &uasData->Auth[1]) != ODID_SUCCESS)
-		printf("Error: Failed to encode Auth 1\n");
-
-	memcpy(&pack_data.Messages[4], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeAuthMessage((ODID_Auth_encoded*) &encoded, &uasData->Auth[2]) != ODID_SUCCESS)
-		printf("Error: Failed to encode Auth 2\n");
-
-	memcpy(&pack_data.Messages[5], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeSelfIDMessage((ODID_SelfID_encoded*) &encoded, &uasData->SelfID) != ODID_SUCCESS)
-		printf("Error: Failed to encode Self ID\n");
-
-	memcpy(&pack_data.Messages[6], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeSystemMessage((ODID_System_encoded*) &encoded, &uasData->System) != ODID_SUCCESS)
-		printf("Error: Failed to encode System\n");
-
-	memcpy(&pack_data.Messages[7], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeOperatorIDMessage((ODID_OperatorID_encoded*) &encoded, &uasData->OperatorID) != ODID_SUCCESS)
-		printf("Error: Failed to encode Operator ID\n");
-
-	memcpy(&pack_data.Messages[8], &encoded, ODID_MESSAGE_SIZE);
-
-	if (encodeMessagePack(pack_enc, &pack_data) != ODID_SUCCESS)
-		printf("Error: Failed to encode message pack_data\n");
-}
-
 
 std::vector<mavlink::Parameter> Transmitter::mavlink_param_request_list_cb()
 {
