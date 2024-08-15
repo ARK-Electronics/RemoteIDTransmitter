@@ -19,7 +19,7 @@ namespace bt
 
 void Bluetooth::legacy_set_random_address()
 {
-	LOG("Setting random address: Legacy");
+	// LOG("Setting random address: Legacy");
 
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = OCF_LE_SET_RANDOM_ADDRESS;
@@ -39,7 +39,7 @@ void Bluetooth::legacy_set_random_address()
 
 void Bluetooth::legacy_set_advertising_enable()
 {
-	LOG("Setting legacy advertising enable");
+	// LOG("Setting legacy advertising enable");
 
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = OCF_LE_SET_ADVERTISE_ENABLE;
@@ -57,7 +57,7 @@ void Bluetooth::legacy_set_advertising_enable()
 
 void Bluetooth::legacy_set_advertising_disable()
 {
-	LOG("Setting legacy advertising disable");
+	// LOG("Setting legacy advertising disable");
 
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = OCF_LE_SET_ADVERTISE_ENABLE;
@@ -75,7 +75,7 @@ void Bluetooth::legacy_set_advertising_disable()
 
 void Bluetooth::legacy_set_advertising_parameters(uint16_t interval_ms)
 {
-	LOG("Setting legacy advertising parameters");
+	// LOG("Setting legacy advertising parameters");
 
 	uint8_t ogf = OGF_LE_CTL;     // Opcode Group Field. LE Controller Commands
 	uint16_t ocf = OCF_LE_SET_ADVERTISING_PARAMETERS;
@@ -90,14 +90,10 @@ void Bluetooth::legacy_set_advertising_parameters(uint16_t interval_ms)
 			};
 
 	interval_ms = std::min(std::max((1000 * interval_ms) / 625, 0x0020), 0x4000);
-
-	uint16_t interval_min = interval_ms - 50;
-	uint16_t interval_max = interval_ms + 50;
-
-	buf[0] = interval_min & 0xFF;
-	buf[1] = (interval_min >> 8) & 0xFF;
-	buf[2] = interval_max & 0xFF;
-	buf[3] = (interval_max >> 8) & 0xFF;
+	buf[0] = interval_ms & 0xFF;
+	buf[1] = (interval_ms >> 8) & 0xFF;
+	buf[2] = interval_ms & 0xFF;
+	buf[3] = (interval_ms >> 8) & 0xFF;
 
 	// Send off the data
 	if (send_command(ogf, ocf, buf, sizeof(buf))) {
@@ -112,7 +108,7 @@ void Bluetooth::legacy_set_advertising_parameters(uint16_t interval_ms)
 
 void Bluetooth::legacy_set_advertising_data(const ODID_Message_encoded* data, uint8_t count)
 {
-	LOG("Setting legacy advertising data");
+	// LOG("Setting legacy advertising data");
 
 	uint8_t ogf = OGF_LE_CTL; // Opcode Group Field. LE Controller Commands
 	uint16_t ocf = OCF_LE_SET_ADVERTISING_DATA; // LE Set Advertising Data
