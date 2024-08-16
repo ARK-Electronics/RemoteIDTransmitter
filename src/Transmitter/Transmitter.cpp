@@ -63,7 +63,7 @@ bool Transmitter::start()
 	});
 
 	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM, [this](const mavlink_message_t& message) {
-		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM: %u / %u", message.sysid, message.compid);
+		LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM: %u / %u", message.sysid, message.compid);
 		std::lock_guard<std::mutex> lock(_system_mutex);
 		mavlink_msg_open_drone_id_system_decode(&message, &_system_msg);
 	});
