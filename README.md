@@ -24,7 +24,10 @@ Run
 ```
 sudo ./build/rid-transmitter --mavlink-url udp://0.0.0.0:14540
 ```
-You must be root to use bluetooth.
+You must be root to use bluetooth. Or you can give the binary capabilities to use bluetooth
+```
+sudo setcap 'cap_net_raw,cap_net_admin+eip' build/rid-transmitter
+```
 
 ---
 
