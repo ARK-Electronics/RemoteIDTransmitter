@@ -51,13 +51,13 @@ bool Transmitter::start()
 
 	// Subscribe to mavlink OPEN_DRONE_ID_LOCATION
 	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID, [this](const mavlink_message_t& message) {
-		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID: %u / %u", message.sysid, message.compid);
+		LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID: %u / %u", message.sysid, message.compid);
 		std::lock_guard<std::mutex> lock(_basic_id_mutex);
 		mavlink_msg_open_drone_id_basic_id_decode(&message, &_basic_id_msg);
 	});
 
 	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION, [this](const mavlink_message_t& message) {
-		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION: %u / %u", message.sysid, message.compid);
+		LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION: %u / %u", message.sysid, message.compid);
 		std::lock_guard<std::mutex> lock(_location_mutex);
 		mavlink_msg_open_drone_id_location_decode(&message, &_location_msg);
 	});
