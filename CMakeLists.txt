@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(rid-transmitter VERSION 0.1 LANGUAGES C CXX)
 
+add_compile_options(-Wall -Wunused)
+
 string(ASCII 27 Esc)
 set(White       "${Esc}[m")
 set(Red         "${Esc}[31m")
@@ -23,7 +25,6 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(BLUEZ REQUIRED bluez)
 include_directories(${BLUEZ_INCLUDE_DIRS})
 link_directories(${BLUEZ_LIBRARY_DIRS})
-
 
 # Determine git version
 exec_program(
@@ -60,7 +61,7 @@ include_directories(
 )
 
 # Create executable
-add_executable(rid-transmitter
+add_executable(${PROJECT_NAME}
     libraries/opendroneid-core-c/libopendroneid/opendroneid.c
     src/Bluetooth/Bluetooth.cpp
     src/Bluetooth/BluetoothLegacy.cpp
@@ -70,8 +71,16 @@ add_executable(rid-transmitter
     src/main.cpp
 )
 
-target_link_libraries(rid-transmitter
+target_link_libraries(${PROJECT_NAME}
     mavlink-cpp
     argparse
     ${BLUEZ_LIBRARIES}
 )
+
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+
+install(DIRECTORY DESTINATION $ENV{HOME}/.local/share/${PROJECT_NAME}
+    DIRECTORY_PERMISSIONS
+    OWNER_WRITE OWNER_READ OWNER_EXECUTE
+    GROUP_WRITE GROUP_READ GROUP_EXECUTE
+    WORLD_WRITE WORLD_READ WORLD_EXECUTE)

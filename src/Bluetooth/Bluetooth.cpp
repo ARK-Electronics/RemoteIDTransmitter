@@ -101,6 +101,7 @@ int Bluetooth::hci_open()
 	int device_id = hci_devid("hci0");
 
 	if (device_id < 0) {
+		LOG(RED_TEXT "Getting device id failed" NORMAL_TEXT);
 		device_id = hci_get_route(NULL);
 	}
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Broadcasts Remote ID data via Bluetooth
+ConditionPathIsDirectory=/sys/class/bluetooth
+Wants=network-online.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/rid-transmitter
+
+[Install]
+WantedBy=default.target
