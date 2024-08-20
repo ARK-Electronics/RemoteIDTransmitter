@@ -19,12 +19,12 @@ int main(int argc, const char** argv)
 
 	argparse::ArgumentParser parser("rid-transmitter");
 
-	parser.add_argument("--mavlink-url").default_value("udp://0.0.0.0:14569").help("Mavlink connection url").metavar("MAV");
+	parser.add_argument("--mavlink-url").default_value("udp://0.0.0.0:14553").help("Mavlink connection url").metavar("MAV");
 	parser.add_argument("--sysid").default_value(1).help("Mavlink System ID").metavar("SYSID");
 	parser.add_argument("--compid").default_value((int)MAV_COMP_ID_ODID_TXRX_1).help("Mavlink Component ID").metavar("COMPID");
 
 	parser.add_description("Specify a mavlink connection url");
-	parser.add_epilog("Example usage:\nRemoteIDTransmitter udp://0.0.0.0:14569");
+	parser.add_epilog("Example usage:\nRemoteIDTransmitter udp://0.0.0.0:14553");
 
 	try {
 		parser.parse_args(argc, argv);
