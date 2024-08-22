@@ -10,3 +10,6 @@
 [submodule "libraries/opendroneid-core-c"]
 	path = libraries/opendroneid-core-c
 	url = https://github.com/opendroneid/opendroneid-core-c.git
+[submodule "libraries/tomlplusplus"]
+	path = libraries/tomlplusplus
+	url = https://github.com/marzer/tomlplusplus.git

@@ -16,8 +16,8 @@
 namespace bt
 {
 
-Bluetooth::Bluetooth(const Settings& settings)
-	: _settings(settings)
+Bluetooth::Bluetooth(const std::string& device_name)
+	: _device_name(device_name)
 {}
 
 void Bluetooth::stop()
@@ -98,7 +98,7 @@ int Bluetooth::hci_open()
 {
 	struct hci_filter filter; // Host Controller Interface filter
 
-	int device_id = hci_devid("hci0");
+	int device_id = hci_devid(_device_name.c_str());
 
 	if (device_id < 0) {
 		LOG(RED_TEXT "Getting device id failed" NORMAL_TEXT);

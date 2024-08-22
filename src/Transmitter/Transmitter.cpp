@@ -12,8 +12,7 @@ static char VERSION_FILE_NAME[] = "/tmp/rid-transmitter/version.txt";
 #endif
 
 Transmitter::Transmitter(const txr::Settings& settings)
-	: _bluetooth_settings(settings.bluetooth_settings)
-	, _mavlink_settings(settings.mavlink_settings)
+	: _settings(settings)
 {
 	// If version has changed reset parameters to default
 	std::string version(APP_GIT_VERSION);
@@ -34,14 +33,14 @@ Transmitter::Transmitter(const txr::Settings& settings)
 bool Transmitter::start()
 {
 	//// Setup Bluetooth
-	_bluetooth = std::make_shared<bt::Bluetooth>(_bluetooth_settings);
+	_bluetooth = std::make_shared<bt::Bluetooth>(_settings.bluetooth_device);
 
 	if (!_bluetooth->initialize()) {
 		return false;
 	}
 
 	//// Setup MAVLink
-	_mavlink = std::make_shared<mavlink::Mavlink>(_mavlink_settings);
+	_mavlink = std::make_shared<mavlink::Mavlink>(_settings.mavlink_settings);
 
 	// Provide PARAM_REQUEST_LIST and PARAM_SET callbacks for our application
 	_mavlink->enable_parameters(
