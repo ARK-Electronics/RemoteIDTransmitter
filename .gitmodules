@@ -1,6 +1,3 @@
-[submodule "libraries/argparse"]
-	path = libraries/argparse
-	url = https://github.com/p-ranav/argparse.git
 [submodule "libraries/mavlink-cpp"]
 	path = libraries/mavlink-cpp
 	url = https://github.com/dakejahl/mavlink-cpp.git
