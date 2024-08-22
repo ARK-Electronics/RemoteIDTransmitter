@@ -15,15 +15,6 @@ set(Yellow      "${Esc}[33m")
 set(Blue        "${Esc}[34m")
 set(BoldGreen   "${Esc}[1;32m")
 
-##### Add libraries
-add_subdirectory(libraries/mavlink-cpp)
-
-# Include bluez
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(BLUEZ REQUIRED bluez)
-include_directories(${BLUEZ_INCLUDE_DIRS})
-link_directories(${BLUEZ_LIBRARY_DIRS})
-
 # Determine git version
 exec_program(
     "git"
@@ -48,8 +39,16 @@ add_definitions(-DAPP_GIT_VERSION="${GIT_VERSION}")
 
 message("-- Version: ${BoldGreen}${GIT_VERSION}${White}")
 
+##### Build mavlink-cpp
+add_subdirectory(libraries/mavlink-cpp)
+
+# Include bluez
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(BLUEZ REQUIRED bluez)
+include_directories(${BLUEZ_INCLUDE_DIRS})
+link_directories(${BLUEZ_LIBRARY_DIRS})
+
 include_directories(
-    src/
     src/misc
     src/Bluetooth
     src/Transmitter
@@ -82,3 +81,6 @@ install(DIRECTORY DESTINATION $ENV{HOME}/.local/share/${PROJECT_NAME}
     OWNER_WRITE OWNER_READ OWNER_EXECUTE
     GROUP_WRITE GROUP_READ GROUP_EXECUTE
     WORLD_WRITE WORLD_READ WORLD_EXECUTE)
+
+install(FILES config.toml DESTINATION $ENV{HOME}/.local/share/${PROJECT_NAME})
+install(CODE "execute_process(COMMAND ./set_capabilities.sh)")
