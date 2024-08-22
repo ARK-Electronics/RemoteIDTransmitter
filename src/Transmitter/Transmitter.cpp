@@ -71,7 +71,7 @@ bool Transmitter::start()
 	auto result = _mavlink->start();
 
 	if (result != mavlink::ConnectionResult::Success) {
-		std::cout << "Mavlink connection start failed: " << result << std::endl;
+		LOG("Mavlink connection start failed");
 		return false;
 	}
 
@@ -93,6 +93,8 @@ void Transmitter::run_state_machine()
 
 	while (!_should_exit) {
 
+		uint64_t start_time = millis();
+
 		_toggle_legacy = !_toggle_legacy;
 
 		if (_toggle_legacy) {
@@ -101,8 +103,6 @@ void Transmitter::run_state_machine()
 		} else {
 			_bluetooth->enable_le_extended_advertising();
 		}
-
-		uint64_t start_time = millis();
 
 		if (params::updated()) {
 			params::load();
