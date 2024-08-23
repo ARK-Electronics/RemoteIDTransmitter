@@ -533,7 +533,7 @@ Bluetooth::CommandResponse Bluetooth::read_command_response(uint16_t opcode, uin
 bool Bluetooth::send_command(uint8_t ogf, uint16_t ocf, uint8_t* data, uint8_t length)
 {
 	if (hci_send_cmd(_device, ogf, ocf, length, data) < 0) {
-		LOG("send_command failed (did you use sudo?");
+		LOG(RED_TEXT "send_command failed (did you use sudo?)" NORMAL_TEXT);
 		return false;
 	}
 

@@ -70,7 +70,7 @@ bool Transmitter::start()
 	auto result = _mavlink->start();
 
 	if (result != mavlink::ConnectionResult::Success) {
-		LOG("Mavlink connection start failed");
+		LOG(RED_TEXT "Mavlink connection start failed" NORMAL_TEXT);
 		return false;
 	}
 
@@ -178,15 +178,15 @@ void Transmitter::send_single_messages(struct ODID_UAS_Data* data)
 	union ODID_Message_encoded system_encoded = {};
 
 	if (encodeBasicIDMessage((ODID_BasicID_encoded*) &basic_encoded, &data->BasicID[0])) {
-		LOG("failed to encode Basic ID");
+		LOG(RED_TEXT "failed to encode Basic ID" NORMAL_TEXT);
 	}
 
 	if (encodeLocationMessage((ODID_Location_encoded*) &location_encoded, &data->Location)) {
-		LOG("failed to encode Location");
+		LOG(RED_TEXT "failed to encode Location" NORMAL_TEXT);
 	}
 
 	if (encodeSystemMessage((ODID_System_encoded*) &system_encoded, &data->System)) {
-		LOG("failed to encode System");
+		LOG(RED_TEXT "failed to encode System" NORMAL_TEXT);
 	}
 
 	// We wait 30ms in between message advertisements since the min advertising interval is 20ms
