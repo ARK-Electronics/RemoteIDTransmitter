@@ -2,43 +2,40 @@
 #include <signal.h>
 #include <sys/time.h>
 
-#include <argparse/argparse.hpp>
+#include <toml.hpp>
 
 #include <Mavlink.hpp>
+#include <uas_serial.hpp>
 #include <Transmitter.hpp>
 
 static void signal_handler(int signum);
 
 std::shared_ptr<txr::Transmitter> _transmitter {nullptr};
 
-int main(int argc, const char** argv)
+int main()
 {
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
 	setbuf(stdout, NULL); // Disable stdout buffering
 
-	argparse::ArgumentParser parser("rid-transmitter");
-
-	parser.add_argument("--mavlink-url").default_value("udp://0.0.0.0:14553").help("Mavlink connection url").metavar("MAV");
-	parser.add_argument("--sysid").default_value(1).help("Mavlink System ID").metavar("SYSID");
-	parser.add_argument("--compid").default_value((int)MAV_COMP_ID_ODID_TXRX_1).help("Mavlink Component ID").metavar("COMPID");
-
-	parser.add_description("Specify a mavlink connection url");
-	parser.add_epilog("Example usage:\nRemoteIDTransmitter udp://0.0.0.0:14553");
+	toml::table config;
 
 	try {
-		parser.parse_args(argc, argv);
+		config = toml::parse_file(std::string(getenv("HOME")) + "/.local/share/rid-transmitter/config.toml");
 
-	} catch (const std::runtime_error& err) {
-		std::cerr << err.what() << std::endl;
-		std::cerr << parser;
-		std::exit(1);
+	} catch (const toml::parse_error& err) {
+		std::cerr << "Parsing failed:\n" << err << "\n";
+		return -1;
+
+	} catch (const std::exception& err) {
+		std::cerr << "Error: " << err.what() << "\n";
+		return -1;
 	}
 
 	mavlink::ConfigurationSettings mav_settings = {
-		.connection_url = parser.get<std::string>("--mavlink-url"),
-		.sysid = static_cast<uint8_t>(parser.get<int>("--sysid")),
-		.compid = static_cast<uint8_t>(parser.get<int>("--compid")),
+		.connection_url = config["connection_url"].value_or("udp://0.0.0.0:14553"),
+		.sysid = 1,
+		.compid = MAV_COMP_ID_ODID_TXRX_1,
 		.target_sysid = 0, // handle messages from all systems
 		.target_compid = 0, // handle messages from all components
 		.mav_type = MAV_TYPE_ODID,
@@ -46,15 +43,23 @@ int main(int argc, const char** argv)
 		.emit_heartbeat = true,
 	};
 
-	bt::Settings bt_settings = {
-		.hci_device_name = "hci0",
-		.use_bt5 = true,
-		.use_btl = true,
-	};
+	std::string uas_serial_number;
+	std::string manufacturer_code = config["manufacturer_code"].value_or("MFR1");
+	std::string serial_number = config["serial_number"].value_or("123456789ABC");
+
+	try {
+		uas_serial_number = generateUASSerialNumber(manufacturer_code, serial_number);
+		LOG("UAS Serial Number: %s", uas_serial_number.c_str());
+
+	} catch (const std::invalid_argument& e) {
+		std::cerr << "Error: " << e.what() << std::endl;
+		return -1;
+	}
 
 	txr::Settings settings = {
 		.mavlink_settings = mav_settings,
-		.bluetooth_settings = bt_settings,
+		.bluetooth_device = config["bluetooth_device"].value_or("hci0"),
+		.uas_serial_number = uas_serial_number,
 	};
 
 	_transmitter = std::make_shared<txr::Transmitter>(settings);
@@ -73,7 +78,7 @@ int main(int argc, const char** argv)
 
 static void signal_handler(int signum)
 {
-	LOG("signal_handler!");
+	LOG("signal_handler! %d", signum);
 
 	if (_transmitter.get()) _transmitter->stop();
 }

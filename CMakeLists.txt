@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(rid-transmitter VERSION 0.1 LANGUAGES C CXX)
 
-add_compile_options(-Wall -Wunused)
+add_compile_options(-Wall -Werror -Wunused -Wextra -Wno-address-of-packed-member)
 
 string(ASCII 27 Esc)
 set(White       "${Esc}[m")
@@ -14,17 +14,6 @@ set(Green       "${Esc}[32m")
 set(Yellow      "${Esc}[33m")
 set(Blue        "${Esc}[34m")
 set(BoldGreen   "${Esc}[1;32m")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-address-of-packed-member")
-
-##### Add libraries
-add_subdirectory(libraries)
-
-# Include bluez
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(BLUEZ REQUIRED bluez)
-include_directories(${BLUEZ_INCLUDE_DIRS})
-link_directories(${BLUEZ_LIBRARY_DIRS})
 
 # Determine git version
 exec_program(
@@ -50,12 +39,21 @@ add_definitions(-DAPP_GIT_VERSION="${GIT_VERSION}")
 
 message("-- Version: ${BoldGreen}${GIT_VERSION}${White}")
 
+##### Build mavlink-cpp
+add_subdirectory(libraries/mavlink-cpp)
+
+# Include bluez
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(BLUEZ REQUIRED bluez)
+include_directories(${BLUEZ_INCLUDE_DIRS})
+link_directories(${BLUEZ_LIBRARY_DIRS})
+
 include_directories(
-    src/
     src/misc
     src/Bluetooth
     src/Transmitter
     src/Transmitter/parameters
+    libraries/tomlplusplus/
     libraries/opendroneid-core-c/libopendroneid
     ${BLUEZ_INCLUDE_DIRS}
 )
@@ -73,7 +71,6 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     mavlink-cpp
-    argparse
     ${BLUEZ_LIBRARIES}
 )
 
@@ -84,3 +81,6 @@ install(DIRECTORY DESTINATION $ENV{HOME}/.local/share/${PROJECT_NAME}
     OWNER_WRITE OWNER_READ OWNER_EXECUTE
     GROUP_WRITE GROUP_READ GROUP_EXECUTE
     WORLD_WRITE WORLD_READ WORLD_EXECUTE)
+
+install(FILES config.toml DESTINATION $ENV{HOME}/.local/share/${PROJECT_NAME})
+install(CODE "execute_process(COMMAND ./set_capabilities.sh)")

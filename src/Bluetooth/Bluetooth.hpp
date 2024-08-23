@@ -7,19 +7,10 @@
 namespace bt
 {
 
-struct Settings {
-	std::string hci_device_name;
-	bool use_bt5 {};
-	bool use_btl {};
-};
-
-static constexpr uint8_t BT5_SET = 0;
-static constexpr uint8_t BT4_SET = 1;
-
 class Bluetooth
 {
 public:
-	Bluetooth(const Settings& settings);
+	Bluetooth(const std::string& device_name);
 
 	bool initialize();
 
@@ -86,13 +77,9 @@ private:
 	void legacy_set_advertising_disable();
 
 private:
-	Settings _settings {};
-	int _device = 0;
-
-	std::string _mac;
-
-	uint16_t _max_adv_data_len = 0;
-
+	std::string _mac {};
+	std::string _device_name {};
+	int _device {};
 };
 
 } // end namespace bt

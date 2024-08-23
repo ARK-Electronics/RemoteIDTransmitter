@@ -12,8 +12,7 @@ static char VERSION_FILE_NAME[] = "/tmp/rid-transmitter/version.txt";
 #endif
 
 Transmitter::Transmitter(const txr::Settings& settings)
-	: _bluetooth_settings(settings.bluetooth_settings)
-	, _mavlink_settings(settings.mavlink_settings)
+	: _settings(settings)
 {
 	// If version has changed reset parameters to default
 	std::string version(APP_GIT_VERSION);
@@ -34,14 +33,14 @@ Transmitter::Transmitter(const txr::Settings& settings)
 bool Transmitter::start()
 {
 	//// Setup Bluetooth
-	_bluetooth = std::make_shared<bt::Bluetooth>(_bluetooth_settings);
+	_bluetooth = std::make_shared<bt::Bluetooth>(_settings.bluetooth_device);
 
 	if (!_bluetooth->initialize()) {
 		return false;
 	}
 
 	//// Setup MAVLink
-	_mavlink = std::make_shared<mavlink::Mavlink>(_mavlink_settings);
+	_mavlink = std::make_shared<mavlink::Mavlink>(_settings.mavlink_settings);
 
 	// Provide PARAM_REQUEST_LIST and PARAM_SET callbacks for our application
 	_mavlink->enable_parameters(
@@ -71,7 +70,7 @@ bool Transmitter::start()
 	auto result = _mavlink->start();
 
 	if (result != mavlink::ConnectionResult::Success) {
-		LOG("Mavlink connection start failed");
+		LOG(RED_TEXT "Mavlink connection start failed" NORMAL_TEXT);
 		return false;
 	}
 
@@ -113,9 +112,9 @@ void Transmitter::run_state_machine()
 		// Basic ID
 		{
 			std::lock_guard<std::mutex> lock(_basic_id_mutex);
-			data.BasicID[0].UAType = (ODID_uatype)_basic_id_msg.id_type;
+			data.BasicID[0].UAType = (ODID_uatype)MAV_ODID_ID_TYPE_SERIAL_NUMBER;
 			data.BasicID[0].IDType = (ODID_idtype_t)_basic_id_msg.ua_type;
-			memcpy(data.BasicID[0].UASID, _basic_id_msg.uas_id, 20);
+			strcpy(data.BasicID[0].UASID, _settings.uas_serial_number.c_str());
 		}
 		// Location / Vector
 		{
@@ -179,15 +178,15 @@ void Transmitter::send_single_messages(struct ODID_UAS_Data* data)
 	union ODID_Message_encoded system_encoded = {};
 
 	if (encodeBasicIDMessage((ODID_BasicID_encoded*) &basic_encoded, &data->BasicID[0])) {
-		LOG("failed to encode Basic ID");
+		LOG(RED_TEXT "failed to encode Basic ID" NORMAL_TEXT);
 	}
 
 	if (encodeLocationMessage((ODID_Location_encoded*) &location_encoded, &data->Location)) {
-		LOG("failed to encode Location");
+		LOG(RED_TEXT "failed to encode Location" NORMAL_TEXT);
 	}
 
 	if (encodeSystemMessage((ODID_System_encoded*) &system_encoded, &data->System)) {
-		LOG("failed to encode System");
+		LOG(RED_TEXT "failed to encode System" NORMAL_TEXT);
 	}
 
 	// We wait 30ms in between message advertisements since the min advertising interval is 20ms

@@ -17,7 +17,8 @@ namespace txr
 
 struct Settings {
 	mavlink::ConfigurationSettings mavlink_settings {};
-	bt::Settings bluetooth_settings {};
+	std::string bluetooth_device {};
+	std::string uas_serial_number {};
 };
 
 class Transmitter
@@ -40,12 +41,13 @@ public:
 private:
 	volatile std::atomic<bool> _should_exit {};
 
+	// App settings
+	Settings _settings {};
+
 	// Bluetooth interface
-	bt::Settings _bluetooth_settings {};
 	std::shared_ptr<bt::Bluetooth> _bluetooth {};
 
 	// Mavlink interface
-	mavlink::ConfigurationSettings _mavlink_settings {};
 	std::shared_ptr<mavlink::Mavlink> _mavlink {};
 
 	// Mavlink message data
