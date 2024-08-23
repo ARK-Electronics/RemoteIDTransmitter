@@ -221,8 +221,6 @@ void Bluetooth::le_set_extended_advertising_disable()
 
 void Bluetooth::le_set_extended_advertising_enable()
 {
-	// LOG("Setting extended advertising enable");
-
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0039; // LE Set Extended Advertising Enable
 	// enable(1) | num_sets(1) | AdvHandle(1*num_sets) | Duration(2*num_sets) | MaxAdvEvt(1*num_sets)
@@ -260,8 +258,6 @@ void Bluetooth::le_remove_advertising_set()
 
 void Bluetooth::le_set_advertising_set_random_address()
 {
-	// LOG("Setting LE random address");
-
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0035; // LE Set Advertising Set Random Address
 	uint8_t buf[_mac.size() + 1] = {};
@@ -282,7 +278,6 @@ void Bluetooth::le_set_advertising_set_random_address()
 void Bluetooth::le_read_local_supported_features()
 {
 	// Page 2479 of reference 5.2
-	LOG("Reading le local supported features");
 	uint8_t ogf = OGF_LE_CTL;
 	uint16_t ocf = 0x0003; // LE Read Local Supported Features
 
@@ -304,7 +299,6 @@ void Bluetooth::le_read_local_supported_features()
 void Bluetooth::hci_read_local_supported_features()
 {
 	// Page 2226 of reference 5.2
-	LOG("Reading hci local supported features");
 	uint8_t ogf = OGF_INFO_PARAM;
 	uint16_t ocf = 0x0003; // Read Local Supported Features
 

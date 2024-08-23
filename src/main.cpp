@@ -5,6 +5,7 @@
 #include <toml.hpp>
 
 #include <Mavlink.hpp>
+#include <uas_serial.hpp>
 #include <Transmitter.hpp>
 
 static void signal_handler(int signum);
@@ -42,9 +43,23 @@ int main()
 		.emit_heartbeat = true,
 	};
 
+	std::string uas_serial_number;
+	std::string manufacturer_code = config["manufacturer_code"].value_or("MFR1");
+	std::string serial_number = config["serial_number"].value_or("123456789ABC");
+
+	try {
+		uas_serial_number = generateUASSerialNumber(manufacturer_code, serial_number);
+		LOG("UAS Serial Number: %s", uas_serial_number.c_str());
+
+	} catch (const std::invalid_argument& e) {
+		std::cerr << "Error: " << e.what() << std::endl;
+		return -1;
+	}
+
 	txr::Settings settings = {
 		.mavlink_settings = mav_settings,
-		.bluetooth_device = std::string("hci0"),
+		.bluetooth_device = config["bluetooth_device"].value_or("hci0"),
+		.uas_serial_number = uas_serial_number,
 	};
 
 	_transmitter = std::make_shared<txr::Transmitter>(settings);

@@ -1,27 +1,4 @@
-# mavlink connection url in the format: udp://<ip_address>:<port>
-
+bluetooth_device = "hci0"
 connection_url = "udp://:14553"
-
-# The Manufacturer (MFR) Code is a 4-character code that consists of digits and may include a
-# combination of digits and uppercase letters, except the letters O and I.
-# The International Civil Aviation Organization (ICAO) is responsible for assigning a unique MFR
-# Code to UAS manufacturers around the world. To obtain a MFR Code, visit
-# https://www.icao.int/publications/DOC8643/Pages/Manufacturers-Codes.aspx.
-
 manufacturer_code = "MFR1"
-
-# The Length Code is a single character that corresponds to the number of characters in the
-# Manufacturer’s Serial Number. Length Code characters range from 1 to 15 in the following way:
-# 1, 2, …, 9, A=10, B=11, …, F=15.
-
-length_code = "C"
-
-# The Manufacturer’s Serial Number will be directly administered by the manufacturer to which
-# the Manufacturer Code is assigned. It is an alphanumeric code with a maximum of 15
-# characters. The Manufacturer’s Serial Number shall include any combination of digits and
-# uppercase letters, except the letters O and I, but may include all digits. The actual number of
-# characters used by the manufacturer shall be indicated by the preceding Length Code.
-
 serial_number = "123456789ABC"
-
-# Example: SN = MFR1C123456789ABC
