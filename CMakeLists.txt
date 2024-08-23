@@ -73,14 +73,3 @@ target_link_libraries(${PROJECT_NAME}
     mavlink-cpp
     ${BLUEZ_LIBRARIES}
 )
-
-install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
-
-install(DIRECTORY DESTINATION $ENV{HOME}/.local/share/${PROJECT_NAME}
-    DIRECTORY_PERMISSIONS
-    OWNER_WRITE OWNER_READ OWNER_EXECUTE
-    GROUP_WRITE GROUP_READ GROUP_EXECUTE
-    WORLD_WRITE WORLD_READ WORLD_EXECUTE)
-
-install(FILES config.toml DESTINATION $ENV{HOME}/.local/share/${PROJECT_NAME})
-install(CODE "execute_process(COMMAND ./set_capabilities.sh)")
