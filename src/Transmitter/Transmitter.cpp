@@ -48,11 +48,11 @@ bool Transmitter::start()
 		std::bind(&Transmitter::mavlink_param_set_cb, this, std::placeholders::_1)
 	);
 
-	// Subscribe to mavlink OPEN_DRONE_ID_LOCATION
-	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID, [this](const mavlink_message_t& message) {
-		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_BASIC_ID: %u / %u", message.sysid, message.compid);
-		std::lock_guard<std::mutex> lock(_basic_id_mutex);
-		mavlink_msg_open_drone_id_basic_id_decode(&message, &_basic_id_msg);
+	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_HEARTBEAT, [this](const mavlink_message_t& message) {
+		if (message.sysid == 1 && message.compid == 1) {
+			std::lock_guard<std::mutex> lock(_heartbeat_mutex);
+			mavlink_msg_heartbeat_decode(&message, &_heartbeat_msg);
+		}
 	});
 
 	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION, [this](const mavlink_message_t& message) {
@@ -111,9 +111,9 @@ void Transmitter::run_state_machine()
 		struct ODID_UAS_Data data = {};
 		// Basic ID
 		{
-			std::lock_guard<std::mutex> lock(_basic_id_mutex);
+			std::lock_guard<std::mutex> lock(_heartbeat_mutex);
 			data.BasicID[0].UAType = (ODID_uatype)MAV_ODID_ID_TYPE_SERIAL_NUMBER;
-			data.BasicID[0].IDType = (ODID_idtype_t)_basic_id_msg.ua_type;
+			data.BasicID[0].IDType = (ODID_idtype_t)_heartbeat_msg.type;
 			strcpy(data.BasicID[0].UASID, _settings.uas_serial_number.c_str());
 		}
 		// Location / Vector

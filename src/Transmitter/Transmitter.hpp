@@ -51,10 +51,10 @@ private:
 	std::shared_ptr<mavlink::Mavlink> _mavlink {};
 
 	// Mavlink message data
-	std::mutex _basic_id_mutex;
+	std::mutex _heartbeat_mutex;
 	std::mutex _location_mutex;
 	std::mutex _system_mutex;
-	mavlink_open_drone_id_basic_id_t _basic_id_msg {};
+	mavlink_heartbeat_t _heartbeat_msg {};
 	mavlink_open_drone_id_location_t _location_msg {};
 	mavlink_open_drone_id_system_t _system_msg {};
 
