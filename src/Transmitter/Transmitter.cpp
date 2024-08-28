@@ -112,8 +112,8 @@ void Transmitter::run_state_machine()
 		// Basic ID
 		{
 			std::lock_guard<std::mutex> lock(_heartbeat_mutex);
-			data.BasicID[0].UAType = (ODID_uatype)MAV_ODID_ID_TYPE_SERIAL_NUMBER;
-			data.BasicID[0].IDType = (ODID_idtype_t)_heartbeat_msg.type;
+			data.BasicID[0].IDType = (ODID_idtype_t)MAV_ODID_ID_TYPE_SERIAL_NUMBER;
+			data.BasicID[0].UAType = (ODID_uatype)_heartbeat_msg.type;
 			strcpy(data.BasicID[0].UASID, _settings.uas_serial_number.c_str());
 		}
 		// Location / Vector
