@@ -52,6 +52,7 @@ bool Transmitter::start()
 		if (message.sysid == 1 && message.compid == 1) {
 			std::lock_guard<std::mutex> lock(_heartbeat_mutex);
 			mavlink_msg_heartbeat_decode(&message, &_heartbeat_msg);
+			LOG("got heartbeat %u", _heartbeat_msg.type);
 		}
 	});
 
