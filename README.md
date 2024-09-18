@@ -3,7 +3,7 @@
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/VN_R9-af3zg/0.jpg)](https://www.youtube.com/watch?v=VN_R9-af3zg)
 
 ### Introduction
-Transmit RemoteID messages via Bluetooth on Linux. The software rapidly toggles between standard (legacy) advertisements and extended (LE) advertisements to meet the requirements of simultaneous broadcast as specified in ASTM3411. The `Basic ID`, `Location/Vector` and `System` messages are sent individually. The data is received via MAVLink as OPEN_DRONE_ID_BASIC_ID, OPEN_DRONE_ID_LOCATION, and OPEN_DRONE_ID_SYSTEM messages and encoded into the bluetooth advertisement data.
+Transmit RemoteID messages via Bluetooth on Linux. The software rapidly toggles between standard (legacy) advertisements and extended (LE) advertisements to meet the requirements of simultaneous broadcast as specified in ASTM3411. The `Basic ID`, `Location/Vector` and `System` messages are sent individually. The data is a combination of config file settings and data received from MAVLink messages (OPEN_DRONE_ID_LOCATION and OPEN_DRONE_ID_SYSTEM). The data is encoded into a struct and packed into the bluetooth advertisement data.
 
 You can decode these messages by installing the [Wireshark dissector plugin](https://github.com/opendroneid/wireshark-dissector) and using a supported BLE sniffer such as the [NR52840 Dongle](https://www.nordicsemi.com/Products/Development-hardware/nrf52840-dongle). You can also use a mobile app like [Drone Scanner](https://play.google.com/store/apps/details?id=cz.dronetag.dronescanner&hl=en_US) to validate the data being broadcast.
 
