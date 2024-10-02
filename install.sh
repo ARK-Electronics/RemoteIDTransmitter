@@ -15,12 +15,12 @@ sudo apt-get install -y astyle bluez bluez-tools libbluetooth-dev
 make
 
 # Setup project directory
-sudo cp $THIS_DIR/build/rid-transmitter /usr/local/bin
+sudo cp $THIS_DIR/build/rid-transmitter ~/.local/bin
 mkdir -p $XDG_DATA_HOME/rid-transmitter
 cp $THIS_DIR/config.toml $XDG_DATA_HOME/rid-transmitter/
 
 # Give the binary capabilities so it doesn't require root
-sudo setcap 'cap_net_raw,cap_net_admin+eip' /usr/local/bin/rid-transmitter
+sudo setcap 'cap_net_raw,cap_net_admin+eip' ~/.local/bin/rid-transmitter
 
 # Modify config file if ENV variables are set
 CONFIG_FILE="$XDG_DATA_HOME/rid-transmitter/config.toml"
