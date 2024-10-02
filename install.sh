@@ -15,7 +15,7 @@ sudo apt-get install -y astyle bluez bluez-tools libbluetooth-dev
 make
 
 # Setup project directory
-sudo cp $THIS_DIR/build/rid-transmitter ~/.local/bin
+cp $THIS_DIR/build/rid-transmitter ~/.local/bin
 mkdir -p $XDG_DATA_HOME/rid-transmitter
 cp $THIS_DIR/config.toml $XDG_DATA_HOME/rid-transmitter/
 
