@@ -1,6 +1,3 @@
-[submodule "libraries/mavlink-cpp"]
-	path = libraries/mavlink-cpp
-	url = https://github.com/dakejahl/mavlink-cpp.git
 [submodule "libraries/bluez"]
 	path = libraries/bluez
 	url = https://github.com/bluez/bluez.git
