@@ -7,12 +7,13 @@ export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$DEFAULT_XDG_CONF_HOME}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$DEFAULT_XDG_DATA_HOME}"
 THIS_DIR="$(dirname "$(realpath "$BASH_SOURCE")")"
 
-sudo true
-
 # Install dependencies
 sudo apt-get install -y astyle bluez bluez-tools libbluetooth-dev
 
+pushd .
+cd "$THIS_DIR"
 make
+popd
 
 # Setup project directory
 cp $THIS_DIR/build/rid-transmitter ~/.local/bin

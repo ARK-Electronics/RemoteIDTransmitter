@@ -1,5 +1,6 @@
 # RemoteIDTransmitter
 
+Check out the YouTube video announcement here <br>
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/VN_R9-af3zg/0.jpg)](https://www.youtube.com/watch?v=VN_R9-af3zg)
 
 ### Introduction
@@ -11,7 +12,7 @@ If you are new to RemoteID you will need to familiarize yourself with ASTM3411 a
 
 ---
 ### Running the application
-Pre-requisites
+Install dependencies
 ```
 sudo apt-get install -y \
 	astyle \
@@ -23,11 +24,21 @@ Build
 ```
 make
 ```
-Run
+Install
 ```
-sudo ./build/rid-transmitter --mavlink-url udp://0.0.0.0:14540
+make install
 ```
-You must be root to use bluetooth. Or you can give the binary capabilities to use bluetooth
+After installing, you can run the application alongside the PX4 simulator.
+1. Edit the **~/.local/share/rid-transmitter/config.toml** and change the `connection_url`
+	```
+	connection_url = "udp://0.0.0.0:14540"
+	```
+2. Run the application
+	```
+	rid-transmitter
+	```
+#### Note
+You must be root to use bluetooth. You can give the binary capabilities to use bluetooth. The **install.sh** does this already.
 ```
 sudo setcap 'cap_net_raw,cap_net_admin+eip' build/rid-transmitter
 ```
@@ -42,11 +53,11 @@ sudo setcap 'cap_net_raw,cap_net_admin+eip' build/rid-transmitter
 
 - We do not use message packs and instead send messages individually due to limitations with advertisement data packet size that varies between hardware.
 
-- BlueZ cannot simultaneously broadcast standard and extended advertisement, so we must toggle between the two modes.
+- BlueZ cannot simultaneously broadcast standard and extended advertisement, so we rapidly toggle between both modes.
 
-- The minimum advertising interval is 20ms per bluetooth spec, so we space advertisements 30ms apart.
+- The minimum bluetooth advertising interval is 20ms, so we space advertisements 30ms apart.
 
-- We rely on the mavlink data to contain accurate information. We always publish the RemoteID messages and do not check that all the necessary data is present before transmitting.
+- We rely on the mavlink data to contain accurate information. We always transmit the RemoteID data and do not check the accurary of the data before transmitting.
 
 - If things aren't working use `sudo btmon` to help debug.
 

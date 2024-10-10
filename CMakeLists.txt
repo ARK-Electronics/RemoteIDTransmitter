@@ -7,40 +7,9 @@ project(rid-transmitter VERSION 0.1 LANGUAGES C CXX)
 
 add_compile_options(-Wall -Werror -Wunused -Wextra -Wno-address-of-packed-member)
 
-string(ASCII 27 Esc)
-set(White       "${Esc}[m")
-set(Red         "${Esc}[31m")
-set(Green       "${Esc}[32m")
-set(Yellow      "${Esc}[33m")
-set(Blue        "${Esc}[34m")
-set(BoldGreen   "${Esc}[1;32m")
-
-# Determine git version
-exec_program(
-    "git"
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ARGS "describe"
-    OUTPUT_VARIABLE GIT_TAG
- )
-
-#...if not found get the SHA1 hash instead
-if(${GIT_TAG} MATCHES "fatal:.*")
-    exec_program(
-        "git"
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ARGS "rev-parse HEAD"
-        OUTPUT_VARIABLE GIT_VERSION
-    )
-else()
-    set(GIT_VERSION ${GIT_TAG})
-endif()
-
-add_definitions(-DAPP_GIT_VERSION="${GIT_VERSION}")
-
-message("-- Version: ${BoldGreen}${GIT_VERSION}${White}")
-
-##### Build mavlink-cpp
-add_subdirectory(libraries/mavlink-cpp)
+# Assumes MAVSDK system wide install
+list(APPEND CMAKE_PREFIX_PATH "/usr/local/MAVSDK/install")
+find_package(MAVSDK REQUIRED)
 
 # Include bluez
 find_package(PkgConfig REQUIRED)
@@ -52,7 +21,6 @@ include_directories(
     src/misc
     src/Bluetooth
     src/Transmitter
-    src/Transmitter/parameters
     libraries/tomlplusplus/
     libraries/opendroneid-core-c/libopendroneid
     ${BLUEZ_INCLUDE_DIRS}
@@ -65,11 +33,11 @@ add_executable(${PROJECT_NAME}
     src/Bluetooth/BluetoothLegacy.cpp
     src/Bluetooth/print_bt_features.c
     src/Transmitter/Transmitter.cpp
-    src/Transmitter/parameters/parameters.cpp
     src/main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
     mavlink-cpp
+    MAVSDK::mavsdk
     ${BLUEZ_LIBRARIES}
 )

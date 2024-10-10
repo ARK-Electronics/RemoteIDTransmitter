@@ -4,7 +4,6 @@
 
 #include <toml.hpp>
 
-#include <Mavlink.hpp>
 #include <uas_serial.hpp>
 #include <Transmitter.hpp>
 
@@ -32,17 +31,6 @@ int main()
 		return -1;
 	}
 
-	mavlink::ConfigurationSettings mav_settings = {
-		.connection_url = config["connection_url"].value_or("udp://0.0.0.0:14553"),
-		.sysid = 1,
-		.compid = MAV_COMP_ID_ODID_TXRX_1,
-		.target_sysid = 0, // handle messages from all systems
-		.target_compid = 0, // handle messages from all components
-		.mav_type = MAV_TYPE_ODID,
-		.mav_autopilot = MAV_AUTOPILOT_INVALID,
-		.emit_heartbeat = true,
-	};
-
 	std::string uas_serial_number;
 	std::string manufacturer_code = config["manufacturer_code"].value_or("MFR1");
 	std::string serial_number = config["serial_number"].value_or("123456789ABC");
@@ -57,7 +45,7 @@ int main()
 	}
 
 	txr::Settings settings = {
-		.mavlink_settings = mav_settings,
+		.mavsdk_connection_url = config["connection_url"].value_or("udp://0.0.0.0:14553"),
 		.bluetooth_device = config["bluetooth_device"].value_or("hci0"),
 		.uas_serial_number = uas_serial_number,
 	};
