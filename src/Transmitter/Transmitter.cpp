@@ -1,33 +1,18 @@
 #include <Transmitter.hpp>
 #include <unistd.h>
-#include <CircularBuffer.hpp>
+#include <mavsdk/log_callback.h>
 
 namespace txr
 {
 
-#if defined(DOCKER_BUILD)
-static char VERSION_FILE_NAME[] = "/data/version.txt";
-#else
-static char VERSION_FILE_NAME[] = "/tmp/rid-transmitter/version.txt";
-#endif
-
 Transmitter::Transmitter(const txr::Settings& settings)
 	: _settings(settings)
 {
-	// If version has changed reset parameters to default
-	std::string version(APP_GIT_VERSION);
-	std::string saved_version(get_sw_version());
-
-	if (saved_version != version) {
-		params::set_defaults();
-		set_sw_version(version);
-		LOG(GREEN_TEXT "New software version! Resetting parameters" NORMAL_TEXT);
-	}
-
-	LOG(GREEN_TEXT "Version: " CYAN_TEXT "%s" NORMAL_TEXT, version.c_str());
-
-	// Load parameters from file system into RAM
-	params::load();
+	// Disable mavsdk noise
+	mavsdk::log::subscribe([](...) {
+		// https://mavsdk.mavlink.io/main/en/cpp/guide/logging.html
+		return true;
+	});
 }
 
 bool Transmitter::start()
@@ -39,52 +24,67 @@ bool Transmitter::start()
 		return false;
 	}
 
-	//// Setup MAVLink
-	_mavlink = std::make_shared<mavlink::Mavlink>(_settings.mavlink_settings);
+	LOG("Waiting for MAVSDK connection: %s", _settings.mavsdk_connection_url.c_str());
 
-	// Provide PARAM_REQUEST_LIST and PARAM_SET callbacks for our application
-	_mavlink->enable_parameters(
-		std::bind(&Transmitter::mavlink_param_request_list_cb, this),
-		std::bind(&Transmitter::mavlink_param_set_cb, this, std::placeholders::_1)
-	);
+	while (!wait_for_mavsdk_connection(3)) {
+		if (_should_exit) {
+			return false;
+		}
+	}
 
-	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_HEARTBEAT, [this](const mavlink_message_t& message) {
+	_mavlink->subscribe_message(MAVLINK_MSG_ID_HEARTBEAT, [this](const mavlink_message_t& message) {
 		if (message.sysid == 1 && message.compid == 1) {
+			// LOG("MAVLINK_MSG_ID_HEARTBEAT: %u / %u", message.sysid, message.compid);
 			std::lock_guard<std::mutex> lock(_heartbeat_mutex);
 			mavlink_msg_heartbeat_decode(&message, &_heartbeat_msg);
 		}
 	});
 
-	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION, [this](const mavlink_message_t& message) {
+	_mavlink->subscribe_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION, [this](const mavlink_message_t& message) {
 		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_LOCATION: %u / %u", message.sysid, message.compid);
 		std::lock_guard<std::mutex> lock(_location_mutex);
 		mavlink_msg_open_drone_id_location_decode(&message, &_location_msg);
 	});
 
-	_mavlink->subscribe_to_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM, [this](const mavlink_message_t& message) {
+	_mavlink->subscribe_message(MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM, [this](const mavlink_message_t& message) {
 		// LOG("MAVLINK_MSG_ID_OPEN_DRONE_ID_SYSTEM: %u / %u", message.sysid, message.compid);
 		std::lock_guard<std::mutex> lock(_system_mutex);
 		mavlink_msg_open_drone_id_system_decode(&message, &_system_msg);
 	});
-
-	auto result = _mavlink->start();
-
-	if (result != mavlink::ConnectionResult::Success) {
-		LOG(RED_TEXT "Mavlink connection start failed" NORMAL_TEXT);
-		return false;
-	}
 
 	return true;
 }
 
 void Transmitter::stop()
 {
-	if (_mavlink.get()) _mavlink->stop();
-
 	if (_bluetooth.get()) _bluetooth->stop();
 
 	_should_exit.store(true);
 }
+
+bool Transmitter::wait_for_mavsdk_connection(double timeout_s)
+{
+	auto config = mavsdk::Mavsdk::Configuration(mavsdk::ComponentType::RemoteId);
+	_mavsdk = std::make_shared<mavsdk::Mavsdk>(config);
+
+	auto result = _mavsdk->add_any_connection(_settings.mavsdk_connection_url);
+
+	if (result != mavsdk::ConnectionResult::Success) {
+		return false;
+	}
+
+	auto system = _mavsdk->first_autopilot(timeout_s);
+
+	if (!system) {
+		return false;
+	}
+
+	LOG("Connected to autopilot");
+	_mavlink = std::make_shared<mavsdk::MavlinkPassthrough>(system.value());
+
+	return true;
+}
+
 
 void Transmitter::run_state_machine()
 {
@@ -101,10 +101,6 @@ void Transmitter::run_state_machine()
 
 		} else {
 			_bluetooth->enable_le_extended_advertising();
-		}
-
-		if (params::updated()) {
-			params::load();
 		}
 
 		// Fill in the data from mavlink messages
@@ -209,70 +205,6 @@ void Transmitter::send_single_messages(struct ODID_UAS_Data* data)
 		_bluetooth->hci_le_set_extended_advertising_data(&system_encoded, ++_system_msg_counter);
 		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 	}
-}
-
-std::vector<mavlink::Parameter> Transmitter::mavlink_param_request_list_cb()
-{
-	std::vector<mavlink::Parameter> mavlink_parameters;
-	auto params = params::parameters(); // Copy parameters from working set
-	uint16_t count = 0;
-
-	for (auto& [name, value] : params) {
-		mavlink::Parameter p = {
-			.name = name,
-			.float_value = value,
-			.index = count++,
-			.total_count = (uint16_t)params.size(),
-			.type = MAV_PARAM_TYPE_REAL32 // We only use floats
-		};
-
-		mavlink_parameters.emplace_back(p);
-	}
-
-	return mavlink_parameters;
-}
-
-bool Transmitter::mavlink_param_set_cb(mavlink::Parameter* param)
-{
-	bool succes = params::set_parameter(param->name, param->float_value);
-
-	if (succes) {
-		auto params = params::parameters();
-		param->index = distance(params.begin(), params.find(param->name));
-	}
-
-	return succes;
-}
-
-const std::string Transmitter::get_sw_version()
-{
-	std::string version;
-
-	std::ifstream infile(VERSION_FILE_NAME);
-	std::stringstream is;
-
-	if (!is.good()) {
-		return version;
-	}
-
-	is << infile.rdbuf();
-	infile.close();
-
-	std::string line;
-
-	if (std::getline(is, line)) {
-		version = line;
-	}
-
-	return version;
-}
-
-void Transmitter::set_sw_version(const std::string& version)
-{
-	std::ofstream outfile;
-	outfile.open(VERSION_FILE_NAME, std::ofstream::out | std::ofstream::trunc);
-	outfile << version << std::endl;
-	outfile.close();
 }
 
 } // end namespace txr

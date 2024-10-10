@@ -1,10 +1,9 @@
 #pragma once
 
 #include <Bluetooth.hpp>
-#include <Mavlink.hpp>
 
-#include <parameters.hpp>
-#include <ThreadSafeQueue.hpp>
+#include <mavsdk/mavsdk.h>
+#include <mavsdk/plugins/mavlink_passthrough/mavlink_passthrough.h>
 
 #include <memory>
 #include <mutex>
@@ -12,11 +11,15 @@
 #include <unordered_map>
 #include <thread>
 
+#include <global_include.hpp>
+
+
 namespace txr
 {
 
 struct Settings {
-	mavlink::ConfigurationSettings mavlink_settings {};
+	// mavlink::ConfigurationSettings mavlink_settings {};
+	std::string mavsdk_connection_url;
 	std::string bluetooth_device {};
 	std::string uas_serial_number {};
 };
@@ -31,10 +34,8 @@ public:
 
 	void run_state_machine();
 
-	std::vector<mavlink::Parameter> mavlink_param_request_list_cb();
-	bool mavlink_param_set_cb(mavlink::Parameter* param);
 
-	std::shared_ptr<mavlink::Mavlink> mavlink() { return _mavlink; };
+	// std::shared_ptr<mavlink::Mavlink> mavlink() { return _mavlink; };
 	std::shared_ptr<bt::Bluetooth> bluetooth() { return _bluetooth; };
 
 
@@ -48,7 +49,9 @@ private:
 	std::shared_ptr<bt::Bluetooth> _bluetooth {};
 
 	// Mavlink interface
-	std::shared_ptr<mavlink::Mavlink> _mavlink {};
+	// std::shared_ptr<mavlink::Mavlink> _mavlink {};
+	std::shared_ptr<mavsdk::Mavsdk> _mavsdk;
+	std::shared_ptr<mavsdk::MavlinkPassthrough> _mavlink;
 
 	// Mavlink message data
 	std::mutex _heartbeat_mutex;
@@ -69,8 +72,7 @@ private:
 	// Sends the Basic ID, Location/Vector, and System messages
 	void send_single_messages(struct ODID_UAS_Data* data);
 
-	void set_sw_version(const std::string& version);
-	const std::string get_sw_version();
+	bool wait_for_mavsdk_connection(double timeout_s);
 };
 
 } // end namespace txr
