@@ -1,6 +1,6 @@
 # RemoteIDTransmitter
 
-Check out the YouTube video announcement here
+Check out the YouTube video announcement here <br>
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/VN_R9-af3zg/0.jpg)](https://www.youtube.com/watch?v=VN_R9-af3zg)
 
 ### Introduction
@@ -12,7 +12,7 @@ If you are new to RemoteID you will need to familiarize yourself with ASTM3411 a
 
 ---
 ### Running the application
-Pre-requisites
+Install dependencies
 ```
 sudo apt-get install -y \
 	astyle \
@@ -29,10 +29,16 @@ Install
 make install
 ```
 After installing, you can run the application alongside the PX4 simulator.
-```
-rid-transmitter
-```
-You must be root to use bluetooth. You can give the binary capabilities to use bluetooth:
+1. Edit the **~/.local/share/rid-transmitter/config.toml** and change the `connection_url`
+	```
+	connection_url = "udp://0.0.0.0:14540"
+	```
+2. Run the application
+	```
+	rid-transmitter
+	```
+#### Note
+You must be root to use bluetooth. You can give the binary capabilities to use bluetooth. The **install.sh** does this already.
 ```
 sudo setcap 'cap_net_raw,cap_net_admin+eip' build/rid-transmitter
 ```
