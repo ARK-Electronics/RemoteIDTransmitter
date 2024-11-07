@@ -48,6 +48,7 @@ sudo setcap 'cap_net_raw,cap_net_admin+eip' build/rid-transmitter
 ### Tested hardware
 - [Advantech AIW-170BQ-001](https://buy.advantech.com/AIW-170BQ-001-AIW-170BQ-001/AIW-170BQ-001/model-AIW-170BQ-001.htm)
 - [Intel AX210](https://www.intel.com/content/www/us/en/products/sku/204836/intel-wifi-6e-ax210-gig/specifications.html)
+- [NXP IW612](https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5-ghz-dual-band-1x1-wi-fi-6-802-11ax-plus-bluetooth-5-4-plus-802-15-4-tri-radio-solution:IW612)
 
 ### Notes
 
