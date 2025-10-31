@@ -9,22 +9,11 @@ add_compile_options(-Wall -Werror -Wunused -Wextra -Wno-address-of-packed-member
 
 # Assumes MAVSDK system wide install
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/MAVSDK/install")
-find_package(MAVSDK REQUIRED)
+find_package(MAVSDK 3 REQUIRED)
 
 # Include bluez
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(BLUEZ REQUIRED bluez)
-include_directories(${BLUEZ_INCLUDE_DIRS})
-link_directories(${BLUEZ_LIBRARY_DIRS})
-
-include_directories(
-    src/misc
-    src/Bluetooth
-    src/Transmitter
-    libraries/tomlplusplus/
-    libraries/opendroneid-core-c/libopendroneid
-    ${BLUEZ_INCLUDE_DIRS}
-)
+pkg_check_modules(BLUEZ REQUIRED IMPORTED_TARGET bluez)
 
 # Create executable
 add_executable(${PROJECT_NAME}
@@ -36,7 +25,15 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
 )
 
+target_include_directories(${PROJECT_NAME} PRIVATE
+    src/misc
+    src/Bluetooth
+    src/Transmitter
+    libraries/tomlplusplus/
+    libraries/opendroneid-core-c/libopendroneid
+)
+
 target_link_libraries(${PROJECT_NAME}
     MAVSDK::mavsdk
-    ${BLUEZ_LIBRARIES}
+    PkgConfig::BLUEZ
 )
