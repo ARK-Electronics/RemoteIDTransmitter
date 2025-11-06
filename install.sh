@@ -16,12 +16,12 @@ make
 popd
 
 # Setup project directory
-cp $THIS_DIR/build/rid-transmitter ~/.local/bin
+cp $THIS_DIR/build/rid-transmitter "${HOME}/.local/bin"
 mkdir -p $XDG_DATA_HOME/rid-transmitter
 cp $THIS_DIR/config.toml $XDG_DATA_HOME/rid-transmitter/
 
 # Give the binary capabilities so it doesn't require root
-sudo setcap 'cap_net_raw,cap_net_admin+eip' ~/.local/bin/rid-transmitter
+sudo setcap 'cap_net_raw,cap_net_admin+eip' "${HOME}/.local/bin/rid-transmitter"
 
 # Modify config file if ENV variables are set
 CONFIG_FILE="$XDG_DATA_HOME/rid-transmitter/config.toml"
