@@ -6,9 +6,11 @@ DEFAULT_XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$DEFAULT_XDG_CONF_HOME}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$DEFAULT_XDG_DATA_HOME}"
 THIS_DIR="$(dirname "$(realpath "$BASH_SOURCE")")"
+PROJECT_ROOT="$( cd "$THIS_DIR/../../.." &> /dev/null && pwd )"
+source "$PROJECT_ROOT/tools/functions.sh"
 
 # Install dependencies
-sudo apt-get install -y astyle bluez bluez-tools libbluetooth-dev
+apt_get_install install -y astyle bluez bluez-tools libbluetooth-dev
 
 pushd .
 cd "$THIS_DIR"
