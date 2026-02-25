@@ -29,7 +29,7 @@ Install
 make install
 ```
 After installing, you can run the application alongside the PX4 simulator.
-1. Edit the **~/.local/share/rid-transmitter/config.toml** and change the `connection_url`
+1. Edit the config file (`/opt/ark/share/rid-transmitter/config.toml` or `~/.config/ark/rid-transmitter/config.toml` for user override) and change the `connection_url`
 	```
 	connection_url = "udp://0.0.0.0:14540"
 	```
@@ -38,7 +38,7 @@ After installing, you can run the application alongside the PX4 simulator.
 	rid-transmitter
 	```
 #### Note
-You must be root to use bluetooth. You can give the binary capabilities to use bluetooth. The **install.sh** does this already.
+You must be root to use bluetooth. You can give the binary capabilities to use bluetooth.
 ```
 sudo setcap 'cap_net_raw,cap_net_admin+eip' build/rid-transmitter
 ```

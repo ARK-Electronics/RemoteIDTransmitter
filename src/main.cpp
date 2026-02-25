@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <filesystem>
 
 #include <toml.hpp>
 
@@ -17,10 +18,16 @@ int main()
 	signal(SIGTERM, signal_handler);
 	setbuf(stdout, NULL); // Disable stdout buffering
 
+	// Two-tier config lookup: user override > deb-installed default
+	const std::string home = getenv("HOME") ? getenv("HOME") : "/tmp";
+	const auto user_config = std::filesystem::path(home) / ".config/ark/rid-transmitter/config.toml";
+	const auto default_config = std::filesystem::path("/opt/ark/share/rid-transmitter/config.toml");
+	const auto config_path = std::filesystem::exists(user_config) ? user_config : default_config;
+
 	toml::table config;
 
 	try {
-		config = toml::parse_file(std::string(getenv("HOME")) + "/.local/share/rid-transmitter/config.toml");
+		config = toml::parse_file(config_path.string());
 
 	} catch (const toml::parse_error& err) {
 		std::cerr << "Parsing failed:\n" << err << "\n";
