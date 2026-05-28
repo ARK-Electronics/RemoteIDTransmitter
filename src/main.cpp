@@ -12,22 +12,34 @@ static void signal_handler(int signum);
 
 std::shared_ptr<txr::Transmitter> _transmitter {nullptr};
 
-int main()
+int main(int argc, char** argv)
 {
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
 	setbuf(stdout, NULL); // Disable stdout buffering
 
-	// Two-tier config lookup: user override > deb-installed default
+	// Config lookup: --config <path> (or --config=<path>) overrides everything;
+	// otherwise user override > deb-installed default.
 	const std::string home = getenv("HOME") ? getenv("HOME") : "/tmp";
 	const auto user_config = std::filesystem::path(home) / ".config/ark/rid-transmitter/config.toml";
 	const auto default_config = std::filesystem::path("/opt/ark/share/rid-transmitter/config.toml");
-	const auto config_path = std::filesystem::exists(user_config) ? user_config : default_config;
+	std::string config_path = (std::filesystem::exists(user_config) ? user_config : default_config).string();
+
+	for (int i = 1; i < argc; i++) {
+		std::string arg = argv[i];
+
+		if (arg == "--config" && i + 1 < argc) {
+			config_path = argv[++i];
+
+		} else if (arg.rfind("--config=", 0) == 0) {
+			config_path = arg.substr(std::string("--config=").size());
+		}
+	}
 
 	toml::table config;
 
 	try {
-		config = toml::parse_file(config_path.string());
+		config = toml::parse_file(config_path);
 
 	} catch (const toml::parse_error& err) {
 		std::cerr << "Parsing failed:\n" << err << "\n";
